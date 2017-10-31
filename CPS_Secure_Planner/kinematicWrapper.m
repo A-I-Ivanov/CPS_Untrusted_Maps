@@ -12,11 +12,13 @@ global controlIndex nx nu K xStart
 end
 
 function xNew = kinematics(x,u)
-global deltaT
-xNew = zeros(3,1);
-xNew(1) = u(1)*cos(x(3))*deltaT + x(1);
-xNew(2) = u(1)*sin(x(3))*deltaT + x(2);
-xNew(3) = x(3) + u(2)*deltaT;
+global deltaT nx
+xNew = zeros(nx,1);
+xNew(1) = x(4)*cos(x(3))*deltaT + x(1);
+xNew(2) = x(4)*sin(x(3))*deltaT + x(2);
+xNew(3) = x(3) + x(5)*deltaT;
+xNew(4) = x(4) +u(1)*deltaT;
+xNew(5) = x(5) +u(2)*deltaT;
 end
 
 
