@@ -169,5 +169,5 @@ Q = diag(sqrt(elipseParams(3:4)));
 elipseCoord = elipseCoord*Q;
 
 hold on 
-plot(elipseCoord(:,1) + elipseParams(1), elipseCoord(:,2) + elipseParams(2),'g');
+plot(elipseCoord(:,1) + elipseParams(1), elipseCoord(:,2) + elipseParams(2),'r');
 
