@@ -1,32 +1,61 @@
 function [cin, constraints] = knotViewConstraints(x)
-global controlIndex nx nu K xStart xO rSafe rSensor thetaSensor
+global controlIndex nx nu K xStart xO rSafe rSensor rReact thetaSensor
     a = [0.1978 0];
     Q = [0.0391 0; 0 0.0151];
-    
+    numConst = 6; 
     constraints = zeros(nx*K,1);
-    constraints(1:nx) = x(1:nx) - xStart;
     for i=1:K-1
         xNow = x(nx*(i-1)+1:nx*i);
+        
         xNext = x(nx*i+1:nx*(i+1));
+        
         uNow = x(controlIndex+nu*(i-1):nu*i+controlIndex-1);
         constraints(nx*i+1:nx*(i+1)) =  xNext - kinematics(xNow, uNow);
-        cin(i) = -norm(xNow(1:2)-xO)^2+rSafe^2;
+        cin(numConst*(i-1)+1) = -norm(xNow(1:2)-xO)+rSafe;
+        
+        xNext(3) = mod(xNext(3), 2*pi); %angle wrap
+        xNow(3) = mod(xNow(3), 2*pi); %angle wrap
         
         %The remaining constraints are safety visual contraints
         %They utilze eliptic transformations 
-        aRot = [cos(xNow(3)) -sin(xNow(3)); sin(xNow(3)) cos(xNow(3))]*a';
-        xDiff = xNow(1:2)- xNext(1:2) - aRot;
-        cin(i+K-1) = norm(xDiff - aRot) - rSensor-10; %%Has to be in sensor range
-        theta12 = atan2(xDiff(2), xDiff(1));
+        aRot = [cos(xNext(3)) -sin(xNext(3)); sin(xNext(3)) cos(xNext(3))]*a';
+        xDiff = +xNow(1:2)- xNext(1:2) - aRot;
         
-        rotMat = [cos(-theta12) -sin(-theta12); sin(-theta12) cos(-theta12)]; 
+        %%Has to be in sensor range, normalize to 1
+        cin(numConst*(i-1)+2) = (norm(xDiff - aRot) - rSensor)/rSensor; 
+        theta12 = -mod(atan2(xDiff(2), xDiff(1)), 2*pi) + pi;
+        
+        rotMat = [cos(theta12) -sin(theta12); sin(theta12) cos(theta12)]; 
         xTic = rotMat*xDiff;
         
-        m1 = tan(thetaSensor - xNow(3) - theta12);
-        m2 = tan(-thetaSensor - xNow(3) - theta12);
+        if(xTic(1)>0)
+            toaster=1;
+        end
         
-        yTic1 = [0 m1*xTic(1)]';
-        yTic2 = [0 m2*xTic(1)]';
+        %Make sure we actually have intercepts
+        if(mod(thetaSensor + xNow(3) + theta12,2*pi)>(pi/2))
+            m1 = 100;
+        else
+            m1 = tan(thetaSensor + xNow(3) + theta12);
+        end
+        
+        if(mod(-thetaSensor + xNow(3) + theta12, 2*pi)>(3*pi/4))
+            m2 = -100;
+        else
+            m2 = tan(-thetaSensor + xNow(3) + theta12);
+        end
+        
+        if(m1<0)
+            toaster=1;
+        end
+        
+        if(m2>0)
+            toaster=1;
+        end
+
+        
+        yTic1 = -[0 m1*xTic(1)]';
+        yTic2 = -[0 m2*xTic(1)]';
         
         
         QTic = rotMat*Q*rotMat';
@@ -50,13 +79,22 @@ global controlIndex nx nu K xStart xO rSafe rSensor thetaSensor
         if norm(inv(A1'*A1)*A1'*b)>=1 || norm(inv(A2'*A2)*A2'*b)>=1
             gay=1;
         end
-        cin(i+2*(K-1)) = -norm(A1*inv(A1'*A1)*A1'*b) + 1;
-        cin(i+3*(K-1)) = -norm(A2*inv(A2'*A2)*A2'*b) + 1;
+        %Poor use of sparsity here. Should re-factor
+        %Also these should be in linear inequality constriants
+        %We normalize to one to get good constraint conditioning
+        cin(numConst*(i-1)+3) = (-norm(A1*inv(A1'*A1)*A1'*b + x2Tic) + 1)/(norm(x2Tic));
+        cin(numConst*(i-1)+4) = (-norm(A2*inv(A2'*A2)*A2'*b + x2Tic) + 1)/(norm(x2Tic));
+        cin(numConst*(i-1)+5) = -y2Tic1(2);
+        cin(numConst*(i-1)+6) = y2Tic2(2);
         
         
         
     end
     
+    if(max(cin)> 1e-6)
+     a = max(cin)
+     
+    end
     
 end
 
