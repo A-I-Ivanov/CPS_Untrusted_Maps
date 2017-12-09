@@ -1,2 +1,2 @@
-This project is the matlab code and documentation for the CPS Trusted Info 
-collaboration
+# CPS_Untrusted_Maps
+This is a repo for the guaranteed obstacle avoidance planner under untrusted maps 
