@@ -68,7 +68,7 @@ lb(controlIndex+1:2:end) = -1;
 
 
 %Some options for the optimizer
-opts = optimset('Display','iter','Algorithm','interior-point', 'MaxIter', 100000, 'MaxFunEvals', 100000);
+opts = optimset('Display','iter','Algorithm','sqp', 'MaxIter', 100000, 'MaxFunEvals', 100000);
 
 
 %What will my controller do for a range of object detections? I assume
