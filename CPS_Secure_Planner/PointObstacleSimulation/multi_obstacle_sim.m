@@ -5,6 +5,8 @@ global deltaT  K nx nu  xStart xO rSafe rReact rSensor thetaSensor xT
 global num1 num2  catXc
 num1 =0; num2=0;
 
+numObst =2;
+
 deltaT = 0.1;
 K = 20; %Number of time steps
 Tf = K*deltaT; %Final time
@@ -20,9 +22,10 @@ thetaSensor = pi/4; %The angular range we care about (roughly in front of us)
 %Note when pointing straight down with one obstacle at [+-.0001, -rReact]'
 %the solver fails. No known reason yet
 xT = [0,2, (pi/2), .2, 0]'; %My referance point (the position I wnant to be close to)
-xO = [0, rReact]';            %The location of my obstacle
+            %The location of my obstacles
 
-
+xO = [-0.001, rReact;
+      0.4, rReact;];
 
 nonlcon = @knotViewConstraints;
 fun = @minTimeCost;
@@ -92,10 +95,10 @@ quiver(result(2:(nx+nu):end), result(3:(nx+nu):end),u,v,'b');
 axis([-1 1 -1 1])
 
 
+for i = 1:numObst
+plot(xO(i,1),xO(i,2),'rx')
+viscircles(xO(i,:),rSafe) %How far away did the robot need to be from the obstacle? Plot this
 
-plot(xO(1),xO(2),'rx')
-viscircles(xO',rSafe) %How far away did the robot need to be from the obstacle? Plot this
-
-
+end
 
 

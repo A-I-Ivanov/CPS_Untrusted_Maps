@@ -13,7 +13,7 @@ global nx nu K xStart xO rSafe rSensor rReact thetaSensor num2 num1
         uNow = x((nx+nu)*(i-1)+2+nx:(nx+nu)*(i)+1);
         constraints((i-1)*(nx)+1:i*nx) = xNext - diffDriveKinematics(xNow, uNow, deltaT);
 
-        cin(numConst*(i-1)+1) = -norm(xNow(1:2)-xO)+rSafe;
+        cin(numConst*(i-1)+1) = -obstDistance(xNow(1:2))+rSafe;
         
         xNext(3) = wrapToPi(xNext(3)); %angle wrap
         xNow(3) = wrapToPi(xNow(3)); %angle wrap
