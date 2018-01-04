@@ -8,7 +8,7 @@ num1 =0; num2=0;
 numObst =2;
 
 deltaT = 0.1;
-K = 20; %Number of time steps
+K = 25; %Number of time steps
 Tf = K*deltaT; %Final time
 nx = 5; %The state number [x,y, orientation, linear speed, angular speed]
 nu = 2; %The number of controls [acceleration, turn rate]
@@ -24,15 +24,16 @@ thetaSensor = pi/4; %The angular range we care about (roughly in front of us)
 xT = [0,2, (pi/2), .2, 0]'; %My referance point (the position I wnant to be close to)
             %The location of my obstacles
 
-xO = [-0.001, rReact;
-      0.4, rReact;];
+xO = [0.0, rReact;
+      0.4, rReact+2*rSafe;];
+      %.2+rSafe, rReact+rSafe;];
 
 nonlcon = @knotViewConstraints;
 fun = @minTimeCost;
 A = [];
 b = [];
 
-xStart = [0,-.3, pi/2, 1, 0]'; %Where and how fast am I going?
+xStart = [0.001,-.3, pi/2, 1, 0]'; %Where and how fast am I going?
 catXc = repmat([0; xStart(1:2); 0; 0; 0; 0; 0;], K, 1);
 uStart =  [0 0]';
 
@@ -43,37 +44,41 @@ xlast = [xStart; uStart];
 
 %The optimizer needs a single vector. This is [x1, x2,....., u1,u2.....]
 
-for i =1:K-1
+for i =1:K-2
     stateOnly = diffDriveKinematics(xlast(1:nx),uStart, x0(1));
     xlast = [stateOnly; uStart];
     x0 = vertcat(x0, xlast);   %I neeed an initial guess of my trajecoty
 end
 
+stateOnly = diffDriveKinematics(xlast(1:nx),uStart, x0(1));
+x0 = vertcat(x0, stateOnly);
+
 
 Aeq = zeros(2*nx,length(x0));
 Aeq(1:nx,2:nx+1) = eye(nx);
-Aeq(nx+1:2*nx,end-nu-nx+1:end-nu) = eye(nx);
-beq = [xStart; xT;];
+Aeq(nx+1:end,end-nx+1:end) = eye(nx);
+%Aeq(nx+1:nx+2,end-nu-nx+1:end-nu-nx+2) = eye(2);
+beq = [xStart;xT]; % xT(1:2);];
 
 
 
-lb = zeros((nx+nu)*K +1,1);
+lb = zeros((nx+nu)*(K-1)+1+nx,1);
 ub = lb;
 lb = lb-Inf; %What are the upper and lower bounds of my states and controls?
 ub = ub+Inf;
 lb(1) = .001;
-ub(1) = .2;
-lb(5:nx+nu:end) = 0;
+ub(1) = .3;
+lb(5:nx+nu:end-nx) = 0;
 %ub(5:nx:controlIndex-1) = pi/deltaT - .1;
 %lb(5:nx:controlIndex-1) = -pi/deltaT +.1;
-ub(nx+2:nx+nu:end) = 1;  %%Bound the acceleration
-lb(nx+2:nx+nu:end) = -1;    
-ub(nx+nu+1:nx+nu:end) = 4; %%Bound the turn rate
-lb(nx+nu+1:nx+nu:end) = -4;
+ub(nx+2:nx+nu:end-nx) = 1;  %%Bound the acceleration
+lb(nx+2:nx+nu:end-nx) = -1;    
+ub(nx+nu+1:nx+nu:end-nx) = 4; %%Bound the turn rate
+lb(nx+nu+1:nx+nu:end-nx) = -4;
 
 
 %Some options for the optimizer
-opts = optimset('Display','iter','Algorithm','sqp', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-20);
+opts = optimset('Display','iter','Algorithm','sqp', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-16);
 %opts.StepTolerance = 1e-14;
 opts.ConstraintTolerance = 1e-6;
 
@@ -94,8 +99,8 @@ toc
 quiver(result(2:(nx+nu):end), result(3:(nx+nu):end),u,v,'b');
 axis([-1 1 -1 1])
 
-
-for i = 1:numObst
+numObst = size(xO);
+for i = 1:numObst(1)
 plot(xO(i,1),xO(i,2),'rx')
 viscircles(xO(i,:),rSafe) %How far away did the robot need to be from the obstacle? Plot this
 

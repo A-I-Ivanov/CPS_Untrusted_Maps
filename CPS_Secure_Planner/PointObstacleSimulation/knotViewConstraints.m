@@ -2,7 +2,7 @@ function [cin, constraints] = knotViewConstraints(x)
 global nx nu K xStart xO rSafe rSensor rReact thetaSensor num2 num1
     a = [0.1978 0];
     Q = [0.0391 0; 0 0.0151];
-    numConst = 6; 
+    numConst = 1; 
 
     constraints = zeros(nx*(K-1),1);
     cin = zeros(K,1);
@@ -24,7 +24,7 @@ global nx nu K xStart xO rSafe rSensor rReact thetaSensor num2 num1
         xDiff = xNow(1:2)- xNext(1:2) - aRot;
         
         %%Has to be in sensor range, normalize to 1
-        cin(numConst*(i-1)+2) = (norm(xDiff - aRot) - rSensor)/rSensor; 
+        %cin(numConst*(i-1)+2) = (norm(xDiff - aRot) - rSensor)/rSensor; 
         theta12 = -wrapToPi(atan2(xDiff(2), xDiff(1))) + pi;
         
         rotMat = [cos(theta12) -sin(theta12); sin(theta12) cos(theta12)]; 
@@ -65,10 +65,10 @@ global nx nu K xStart xO rSafe rSensor rReact thetaSensor num2 num1
         
         %Also these should be in linear inequality constriants
         %We normalize to one to get good constraint conditioning
-        cin(numConst*(i-1)+3) = (-norm(A1*pinv(A1)*b + x2Tic) + 1)/(norm(x2Tic));
-        cin(numConst*(i-1)+4) = (-norm(A2*pinv(A2)*b + x2Tic) + 1)/(norm(x2Tic));
-        cin(numConst*(i-1)+5) = -y2Tic1(2);
-        cin(numConst*(i-1)+6) = y2Tic2(2);
+        %cin(numConst*(i-1)+3) = (-norm(A1*pinv(A1)*b + x2Tic) + 1)/(norm(x2Tic));
+        %cin(numConst*(i-1)+4) = (-norm(A2*pinv(A2)*b + x2Tic) + 1)/(norm(x2Tic));
+        %cin(numConst*(i-1)+5) = -y2Tic1(2);
+        %cin(numConst*(i-1)+6) = y2Tic2(2);
         
         
     end
