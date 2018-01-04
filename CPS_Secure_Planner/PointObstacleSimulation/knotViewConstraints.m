@@ -20,11 +20,15 @@ global nx nu K xStart xO rSafe rSensor rReact thetaSensor num2 num1
         
         %The remaining constraints are safety visual contraints
         %They utilze eliptic transformations 
+        if(xNext(4)<0)
+            toaster=1;
+        end
+        [a,Q] = interpReactive(xNext(4));
         aRot = [cos(xNext(3)) -sin(xNext(3)); sin(xNext(3)) cos(xNext(3))]*a';
         xDiff = xNow(1:2)- xNext(1:2) - aRot;
         
         %%Has to be in sensor range, normalize to 1
-        %cin(numConst*(i-1)+2) = (norm(xDiff - aRot) - rSensor)/rSensor; 
+        cin(numConst*(i-1)+2) = (norm(xDiff - aRot) - rSensor)/rSensor; 
         theta12 = -wrapToPi(atan2(xDiff(2), xDiff(1))) + pi;
         
         rotMat = [cos(theta12) -sin(theta12); sin(theta12) cos(theta12)]; 
@@ -65,10 +69,10 @@ global nx nu K xStart xO rSafe rSensor rReact thetaSensor num2 num1
         
         %Also these should be in linear inequality constriants
         %We normalize to one to get good constraint conditioning
-        %cin(numConst*(i-1)+3) = (-norm(A1*pinv(A1)*b + x2Tic) + 1)/(norm(x2Tic));
-        %cin(numConst*(i-1)+4) = (-norm(A2*pinv(A2)*b + x2Tic) + 1)/(norm(x2Tic));
-        %cin(numConst*(i-1)+5) = -y2Tic1(2);
-        %cin(numConst*(i-1)+6) = y2Tic2(2);
+        cin(numConst*(i-1)+3) = (-norm(A1*pinv(A1)*b + x2Tic) + 1)/(norm(x2Tic));
+        cin(numConst*(i-1)+4) = (-norm(A2*pinv(A2)*b + x2Tic) + 1)/(norm(x2Tic));
+        cin(numConst*(i-1)+5) = -y2Tic1(2);
+        cin(numConst*(i-1)+6) = y2Tic2(2);
         
         
     end

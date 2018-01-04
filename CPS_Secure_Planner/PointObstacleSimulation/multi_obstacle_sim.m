@@ -15,7 +15,7 @@ nu = 2; %The number of controls [acceleration, turn rate]
 rSensor = 5;
 rReact = .8; %The sensed range of an obstacle (when should our controller activate?)
 rSafe = .3;
-thetaSensor = pi/4; %The angular range we care about (roughly in front of us)
+thetaSensor = pi/2.5; %The angular range we care about (roughly in front of us)
 
 
 
@@ -33,7 +33,7 @@ fun = @minTimeCost;
 A = [];
 b = [];
 
-xStart = [0.001,-.3, pi/2, 1, 0]'; %Where and how fast am I going?
+xStart = [0.01,-.3, pi/2, 1, 0]'; %Where and how fast am I going?
 catXc = repmat([0; xStart(1:2); 0; 0; 0; 0; 0;], K, 1);
 uStart =  [0 0]';
 
@@ -67,8 +67,8 @@ ub = lb;
 lb = lb-Inf; %What are the upper and lower bounds of my states and controls?
 ub = ub+Inf;
 lb(1) = .001;
-ub(1) = .3;
 lb(5:nx+nu:end-nx) = 0;
+ub(5:nx+nu:end-nx) = 1.9;
 %ub(5:nx:controlIndex-1) = pi/deltaT - .1;
 %lb(5:nx:controlIndex-1) = -pi/deltaT +.1;
 ub(nx+2:nx+nu:end-nx) = 1;  %%Bound the acceleration
@@ -78,7 +78,7 @@ lb(nx+nu+1:nx+nu:end-nx) = -4;
 
 
 %Some options for the optimizer
-opts = optimset('Display','iter','Algorithm','sqp', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-16);
+opts = optimset('Display','iter','Algorithm','sqp', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-18);
 %opts.StepTolerance = 1e-14;
 opts.ConstraintTolerance = 1e-6;
 
