@@ -1,4 +1,5 @@
-function [cin, constraints] = knotViewConstraints(x)
+function [cin, constraints, DC, DCeq] = knotViewConstraints(x)
+    finDiffDelta = 1e-6;
 global nx nu K xStart xO rSafe rSensor rReact thetaSensor num2 num1
     a = [0.1978 0];
     Q = [0.0391 0; 0 0.0151];

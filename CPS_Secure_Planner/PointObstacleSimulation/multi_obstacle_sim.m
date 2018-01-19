@@ -78,11 +78,11 @@ lb(nx+nu+1:nx+nu:end-nx) = -4;
 
 
 %Some options for the optimizer
-options = otimop
+options = optimoptions('fmincon', 'Display','iter','Algorithm','sqp', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-16);
+options =optimoptions(options,'GradObj', 'on'); 
+options =optimoptions(options,'SpecifyObjectiveGradient',true);
 opts = optimset('Display','iter','Algorithm','interior-point', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-16);
 
-%opts.StepTolerance = 1e-14;
-opts.ConstraintTolerance = 1e-6;
 
 
 figure 
@@ -91,7 +91,7 @@ hold on
 
 %%Solve the thing
 profile on
-result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, opts);
+result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
 
 
 [u,v] = pol2cart(result(4:(nx+nu):end),result(5:(nx+nu):end));
