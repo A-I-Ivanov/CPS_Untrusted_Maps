@@ -78,9 +78,7 @@ lb(nx+nu+1:nx+nu:end-nx) = -4;
 
 
 %Some options for the optimizer
-options = otimop
-opts = optimset('Display','iter','Algorithm','interior-point', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-16);
-
+opts = optimset('Display','iter','Algorithm','sqp', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-18);
 %opts.StepTolerance = 1e-14;
 opts.ConstraintTolerance = 1e-6;
 
@@ -90,9 +88,9 @@ hold on
 
 
 %%Solve the thing
-profile on
+tic
 result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, opts);
-
+toc
 
 [u,v] = pol2cart(result(4:(nx+nu):end),result(5:(nx+nu):end));
 
@@ -108,4 +106,4 @@ viscircles(xO(i,:),rSafe) %How far away did the robot need to be from the obstac
 
 end
 
-profile viewer
+
