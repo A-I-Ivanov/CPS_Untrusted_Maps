@@ -81,6 +81,8 @@ lb(nx+nu+1:nx+nu:end-nx) = -4;
 options = optimoptions('fmincon', 'Display','iter','Algorithm','sqp', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-16);
 options =optimoptions(options,'GradObj', 'on'); 
 options =optimoptions(options,'SpecifyObjectiveGradient',true);
+options =optimoptions(options,'CheckGradients',true);
+options =optimoptions(options,'SpecifyConstraintGradient', true);
 opts = optimset('Display','iter','Algorithm','interior-point', 'MaxIter', 100000, 'MaxFunEvals', 100000, 'TolX', 1e-16);
 
 
