@@ -32,18 +32,19 @@ end
 velData = [0.0786498261593462, 0,0.0213969775637027,0.0109216275074815 ;
     0.496269572116941,0,0.0643095906324830, 0.0484791498039827];
 
-a1 = velData(1, 1:2);
-a2 = velData(2, 1:2);
+%%debugging
+start=1; fin =2;
 
-q1 = velData(1, 3:4);
-q2 = velData(2, 3:4);
+%a1 = velData(start, 1:2);
+%a2 = velData(fin, 1:2);
 
-a = a1*(1-scaling)+a2*scaling;
-q = q1*(1-scaling)+q2*scaling;
+%q1 = velData(start, 3:4);
+%q2 = velData(fin, 3:4);
+
+a = velData(start, 1:2)*(1-scaling)+velData(fin, 1:2)*scaling;
+q = velData(start, 3:4)*(1-scaling)+velData(fin, 3:4)*scaling;
 
 Q = diag(q);
 
-    %a = [0.1978 0];
-    %Q = [0.0691 0; 0 0.0351];
 
 end

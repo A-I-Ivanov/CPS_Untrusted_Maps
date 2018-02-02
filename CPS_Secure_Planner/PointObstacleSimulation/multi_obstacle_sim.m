@@ -92,7 +92,8 @@ hold on
 
 
 %%Solve the thing
-profile on
+profile off
+
 result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
 
 
