@@ -5,7 +5,7 @@ global nx nu K rSensor thetaSensor num2 num1
     E = eye(nx);
     numConst = 6; 
     numEqConst = nx*(K-1);
-    deltaEye = 3;
+    deltaEye = 4;
     eqconst = zeros(numEqConst,1);
     
     DCeq = zeros(numEqConst, length(x)); 

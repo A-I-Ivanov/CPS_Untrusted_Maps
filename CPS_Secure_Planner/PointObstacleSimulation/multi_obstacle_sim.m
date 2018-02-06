@@ -1,14 +1,14 @@
 %This code simulates a robot forward for 3 seconds using an MPC controller
 %clear all
 close all
-global deltaT  K nx nu  xStart xO rSafe rReact rSensor thetaSensor xT 
+global deltaT  K nx nu  xStart xO rSafe rReact rSensor thetaSensor xT  polygons
 global num1 num2  catXc 
 num1 =0; num2=0;
 
 numObst =2;
 
-deltaT = 0.1;
-K = 30; %Number of time steps
+deltaT = 0.05;
+K = 35; %Number of time steps
 Tf = K*deltaT; %Final time
 nx = 5; %The state number [x,y, orientation, linear speed, angular speed]
 nu = 2; %The number of controls [acceleration, turn rate]
@@ -23,7 +23,23 @@ thetaSensor = pi/3; %The angular range we care about (roughly in front of us)
 %the solver fails. No known reason yet
 xT = [0 ,2.5, (pi/2)]'; % .5, 0]'; %My referance point (the position I wnant to be close to)
             %The location of my obstacles
+            
+polygons = cell(numObst);            
+polygons{1} = [ .5,  rReact;
+               0.4, rReact;     
+               0.4, rReact+0.5;
+               0.4, rReact+0.7;
+                 .5, rReact + .0000001;];
 
+                
+polygons{2} = [ -.5,  rReact;
+               -0.4, rReact;     
+               -0.4, rReact+0.5;
+               -0.4, rReact+0.7;
+                -.5, rReact + .0000001;];
+            
+            
+            
 xO = [-0.15,rReact;
       0.15, rReact;     
       0.02, rReact+0.5;];
@@ -35,7 +51,7 @@ b = [];
 
 xStart = [0.0,-.1, pi/2, 1, 0]'; %Where and how fast am I going?
 catXc = repmat([0; xStart(1:2); 0; 0; 0; 0; 0;], K, 1);
-uStart =  [.01 .02]';
+uStart =  [.01 .0]';
 
 x0 = [deltaT; xStart; uStart];
 
@@ -54,7 +70,7 @@ end
 
 stateOnly = diffDriveKinematics(xlast(1:nx),uStart, x0(1));
 x0 = vertcat(x0, stateOnly);
-x0 = warmstart;
+x0(8:end) = warmstart(8:end);
 
 Aeq = zeros(2*nx-2,length(x0));
 Aeq(1:nx,2:nx+1) = eye(nx);
@@ -80,7 +96,7 @@ lb(nx+nu+1:nx+nu:end-nx) = -4;
 
 
 %Some options for the optimizer
-options = optimoptions('fmincon','Algorithm','active-set', 'MaxIter', 300, 'MaxFunEvals', 10000, 'TolX', 1e-16);
+options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 100, 'MaxFunEvals', 10000, 'TolX', 1e-14);
 options =optimoptions(options,'OptimalityTolerance', 1e-6);
 options =optimoptions(options,'Display','iter');
 options =optimoptions(options,'ConstraintTolerance', 1e-6); 
@@ -109,10 +125,10 @@ toc
 quiver(result(2:(nx+nu):end), result(3:(nx+nu):end),u,v,'b');
 axis([-1 1 -.5 2.5])
 
-numObst = size(xO);
-for i = 1:numObst(1)
-plot(xO(i,1),xO(i,2),'rx')
-viscircles(xO(i,:),.1) %How far away did the robot need to be from the obstacle? Plot this
+
+for i = 1:numObst
+plot(polygons{i}(:,1),polygons{i}(:,2),'r')
+%viscircles(xO(i,:),.1) %How far away did the robot need to be from the obstacle? Plot this
 
 end
 
