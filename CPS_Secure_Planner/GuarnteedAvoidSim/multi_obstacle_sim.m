@@ -1,11 +1,12 @@
 %This code simulates a robot forward for 3 seconds using an MPC controller
-%clear all
+clear all
 close all
+addpath('../BasicFunctions')
 global deltaT  K nx nu  xStart xO rSafe rReact rSensor thetaSensor xT  polygons
 global num1 num2  catXc 
 num1 =0; num2=0;
 
-numObst =2;
+numObst =1;
 
 deltaT = 0.05;
 K = 35; %Number of time steps
@@ -21,22 +22,22 @@ thetaSensor = pi/3; %The angular range we care about (roughly in front of us)
 
 %Note when pointing straight down with one obstacle at [+-.0001, -rReact]'
 %the solver fails. No known reason yet
-xT = [0 ,2.5, (pi/2)]'; % .5, 0]'; %My referance point (the position I wnant to be close to)
+xT = [1.5 , 1.5, (pi/2)]'; % .5, 0]'; %My referance point (the position I wnant to be close to)
             %The location of my obstacles
             
-polygons = cell(numObst);            
-polygons{1} = [ .5,  rReact;
-               0.4, rReact;     
-               0.4, rReact+0.5;
-               0.4, rReact+0.7;
-                 .5, rReact + .0000001;];
+polygons = cell(numObst,1);            
+polygons{1} = [ -.5,  .5;
+               1, .5;     
+               1, 1;
+               -.5, 1;
+               -.5, .5 + .0000001;];
 
                 
-polygons{2} = [ -.5,  rReact;
-               -0.4, rReact;     
-               -0.4, rReact+0.5;
-               -0.4, rReact+0.7;
-                -.5, rReact + .0000001;];
+%polygons{2} = [ -.5,  rReact;
+%%               -0.4, rReact;     
+%              -0.4, rReact+0.5;
+%               -0.4, rReact+0.7;
+%                -.5, rReact + .0000001;];
             
             
             
@@ -44,14 +45,14 @@ xO = [-0.15,rReact;
       0.15, rReact;     
       0.02, rReact+0.5;];
 
-nonlcon = @knotViewConstraints;
+nonlcon = @basicDynamicsConstraints;%knotViewConstraints; %
 fun = @minTimeCost;
 A = [];
 b = [];
 
-xStart = [0.0,-.1, pi/2, 1, 0]'; %Where and how fast am I going?
+xStart = [0.0, .1, 0, 1, 0]'; %Where and how fast am I going?
 catXc = repmat([0; xStart(1:2); 0; 0; 0; 0; 0;], K, 1);
-uStart =  [.01 .0]';
+uStart =  [.2 .1]';
 
 x0 = [deltaT; xStart; uStart];
 
@@ -70,7 +71,8 @@ end
 
 stateOnly = diffDriveKinematics(xlast(1:nx),uStart, x0(1));
 x0 = vertcat(x0, stateOnly);
-x0(8:end) = warmstart(8:end);
+%x0(8:end) = warmstart(8:end);
+%x0(1) = warmstart(1);
 
 Aeq = zeros(2*nx-2,length(x0));
 Aeq(1:nx,2:nx+1) = eye(nx);
@@ -96,7 +98,7 @@ lb(nx+nu+1:nx+nu:end-nx) = -4;
 
 
 %Some options for the optimizer
-options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 100, 'MaxFunEvals', 10000, 'TolX', 1e-14);
+options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 200, 'MaxFunEvals', 10000, 'TolX', 1e-16);
 options =optimoptions(options,'OptimalityTolerance', 1e-6);
 options =optimoptions(options,'Display','iter');
 options =optimoptions(options,'ConstraintTolerance', 1e-6); 
@@ -123,7 +125,7 @@ toc
 %%Plot the x,y solutions
 
 quiver(result(2:(nx+nu):end), result(3:(nx+nu):end),u,v,'b');
-axis([-1 1 -.5 2.5])
+axis([-1 2 -1 2])
 
 
 for i = 1:numObst
