@@ -1,23 +1,20 @@
 function controls = reactiveControl(xStart, obstaclePoint, xSetpoint)
 
-global  nx nu xO rSafe terminal turnBounds velBounds accelBounds %top level globals
+global  nx nu xO rSafe terminal turnBounds velBounds accelBounds reactiveSteps%top level globals
 global  block catXc %this function's globals
 
+rSafe = .3;
 nx = 5; nu =2;
 turnBounds = [-4 4];
-velBounds = [0.1, 1.8];
+velBounds = [0.0, 1.8];
 accelBounds = [-1 1];
 
 
-persistent deltaT K Tf A b lb ub Aeq fun nonlcon     
+persistent deltaT Tf A b lb ub Aeq fun nonlcon options   
 if(isempty(Tf))
     deltaT = 0.1;
-    K = 10; %Number of time steps
-    Tf = K*deltaT; %Final time
-
-
-
-
+    reactiveSteps = 10; %Number of time steps
+    Tf = reactiveSteps*deltaT; %Final time
 
     %Note when pointing straight down with one obstacle at [+-.0001, -rReact]'
     %the solver fails. No known reason yet
@@ -33,47 +30,48 @@ if(isempty(Tf))
     
     blkR{1} = 0;
     
-    blkR = horzcat(blkR,repmat({R},1,K-1));
+    blkR = horzcat(blkR,repmat({R},1,reactiveSteps-1));
     blkR = horzcat(blkR,{R(1:nx,1:nx)});
     block = blkdiag(blkR{:});
 
-    totalVars = (nx+nu)*(K-1)+1+nx;
+    totalVars = (nx+nu)*(reactiveSteps-1)+1+nx;
     terminal = 10; %%This is a 'terminal cost'. 
                %How far away from the referance are you at the very end?
 
-    nonlcon = @kinematicWrapper;
+    nonlcon = @reactiveControllerConst;
     fun = @quadratic_intialpoint_cost;
     A = [];
     b = [];
 
-    catXc = [deltaT; repmat([xSetpoint(1:2); 0; 0; 0; 0; 0;], K-1, 1);[xSetpoint(1:2); 0; 0; 0;];];
+    catXc = [deltaT; repmat([xSetpoint(1:2); 0; 0; 0; 0; 0;], reactiveSteps-1, 1);[xSetpoint(1:2); 0; 0; 0;];];
 
-    Aeq = zeros(nx+2,totalVars);
+    Aeq = zeros(nx+1,totalVars);
     Aeq(1:nx,2:nx+1) = eye(nx);
-    Aeq(nx+1,:) = [1, repmat(zeros(1,nx+nu), 1, K-1), zeros(1, nx)];
-    Aeq(nx+2,end-nu-1) = 1;
+    Aeq(nx+1,:) = [1, repmat(zeros(1,nx+nu), 1, reactiveSteps-1), zeros(1, nx)];
     
     lb = zeros(totalVars,1);
     ub = lb;
     lb = lb-Inf; %What are the upper and lower bounds of my states and controls?
     ub = ub+Inf;
-    lb(1:nx+nu+1:end) = deltaT;
-    ub(1:nx+nu+1:end) = deltaT;
-    lb(5:nx+nu+1:end) = velBounds(1);
-    ub(5:nx+nu+1:end) = velBounds(2);
+    lb(1) = deltaT;
+    ub(1) = deltaT;
+    lb(5:nx+nu:end) = velBounds(1);
+    ub(5:nx+nu:end) = velBounds(2);
 
-    ub(nx+2:nx+nu+1:end) = accelBounds(2);  %%Bound the acceleration
-    lb(nx+2:nx+nu+1:end) = accelBounds(1);    
-    ub(nx+nu+1:nx+nu+1:end) = turnBounds(2); %%Bound the turn rate
-    lb(nx+nu+1:nx+nu+1:end) = turnBounds(1);
+    ub(nx+2:nx+nu:end) = accelBounds(2);  %%Bound the acceleration
+    lb(nx+2:nx+nu:end) = accelBounds(1);    
+    ub(nx+nu+1:nx+nu:end) = turnBounds(2); %%Bound the turn rate
+    lb(nx+nu+1:nx+nu:end) = turnBounds(1);
 
-
+    options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 100, 'MaxFunEvals', 10000,'TolX', 1e-15);
+    options =optimoptions(options,'OptimalityTolerance', 1e-4);
+    options =optimoptions(options,'ConstraintTolerance', 1e-5); 
 end
 
 
 
 
-uStart =  [-1 0]';
+uStart =  [accelBounds(1) 0]';
 
 x0 = [deltaT; xStart;];
 
@@ -82,7 +80,7 @@ xlast = x0;
 stateOnly = xStart;
 %The optimizer needs a single vector. This is [x1, x2,....., u1,u2.....]
 
-for i =1:K-1
+for i =1:reactiveSteps-1
     stateOnly = diffDriveKinematics(stateOnly,uStart, deltaT);
     xlast = [uStart; stateOnly];
     x0 = vertcat(x0, xlast);   %I neeed an initial guess of my trajecoty
@@ -92,17 +90,13 @@ end
 
 xO = obstaclePoint;            %The location of my obstacle
 
-beq = [xStart; Tf; 0;];
+beq = [xStart; deltaT;];
 
-
-%Some options for the optimizer
-opts = optimset('Algorithm','sqp','Display', 'Iter', 'MaxIter', 100000, 'MaxFunEvals', 100000,'TolX', 1e-17);
-opts.ConstraintTolerance = 1e-5;
 
 %%Solve the thing
-
-result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, opts);
-
+tic
+result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+toc
    
 controls = result(nx+1:nx+nu+1);    
   

@@ -2,10 +2,9 @@
 clear all
 close all
 global deltaT  K nx nu controlIndex xStart xO rSafe rReact rSensor thetaSensor xT terminal
-global num1 num2 block catXc
+global num1 num2 block catXc 
 num1 =0; num2=0;
 figure
-
 deltaV = 0.1;
 velDisc = 18;
 elipseParams = zeros(velDisc, 4);
