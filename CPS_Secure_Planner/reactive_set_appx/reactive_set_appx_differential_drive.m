@@ -5,6 +5,8 @@ global deltaT  K nx nu controlIndex xStart xO rSafe rReact rSensor thetaSensor x
 global num1 num2 block catXc 
 num1 =0; num2=0;
 figure
+
+addpath('../ReactiveController');
 deltaV = 0.1;
 velDisc = 18;
 elipseParams = zeros(velDisc, 4);
@@ -112,18 +114,18 @@ for k = 1:velDisc
                                 %the obstale will be detected at the edge of rS
     figure 
     hold on
-    
+    profile on
     for i=1:reactiveDisc
     xO = [objectOffset(i), reactRange]';
     %%Solve the thing
-    tic
+    
     result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, opts);
-    toc
+    
 
     [u,v] = pol2cart(result(4:(nx+nu+1):end),result(5:(nx+nu+1):end));
 
     %%Plot the x,y solutions
-
+    
     quiver(result(2:(nx+nu+1):end), result(3:(nx+nu+1):end),u,v,'b');
     axis([-1 1 -1 1])
     
@@ -150,10 +152,11 @@ for k = 1:velDisc
 
     plot(elipseCoord(:,1) + elipseParams(k,1), elipseCoord(:,2) + elipseParams(k,2),'g');
 
-
+    
 end
 
 
-
+profile off
+    profile viewer
 
 

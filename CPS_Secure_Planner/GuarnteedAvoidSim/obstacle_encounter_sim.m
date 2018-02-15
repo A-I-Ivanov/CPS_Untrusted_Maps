@@ -1,19 +1,24 @@
 %This code simulates a robot forward for 3 seconds using an MPC controller
 clear all
 close all
-addpath('../BasicFunctions')
+addpath('../BasicFunctions') ;
+addpath('../ReactiveController');
 global deltaT  K nx nu  xStart xO rSafe rReact rSensor thetaSensor xT  polygons
-global num1 num2  catXc turnBounds velBounds accelBounds
+global num1 num2  catXc turnBounds velBounds accelBounds unknownObst
 num1 =0; num2=0;
 
 numObst =1;
 
+testing =0;
+warmstart = 0;
+
 deltaT = 0.05;
-K = 35; %Number of time steps
+reactiveDT = .1;
+K = 30; %Number of time steps
 Tf = K*deltaT; %Final time
 nx = 5; %The state number [x,y, orientation, linear speed, angular speed]
 nu = 2; %The number of controls [acceleration, turn rate]
-rSensor = 5;
+rSensor = 1;
 rReact = .8; %The sensed range of an obstacle (when should our controller activate?)
 rSafe = .3;
 thetaSensor = pi/3; %The angular range we care about (roughly in front of us)
@@ -26,25 +31,15 @@ accelBounds = [-1 1];
 
 %Note when pointing straight down with one obstacle at [+-.0001, -rReact]'
 %the solver fails. No known reason yet
-xT = [1.5 , 1.5, (pi/2)]'; % .5, 0]'; %My referance point (the position I wnant to be close to)
+xT = [1.2 , 1.5, (pi/2)]'; % .5, 0]'; %My referance point (the position I wnant to be close to)
             %The location of my obstacles
             
-polygons = cell(numObst,1);            
-polygons{1} = [ -.5,  .5;
-               1, .5;     
-               1, 1;
-               -.5, 1;
-               -.5, .5 + .0000001;];
+%Load test known polygons            
+load('large_box_known.mat');
 
-                
-%polygons{2} = [ -.5,  rReact;
-%%               -0.4, rReact;     
-%              -0.4, rReact+0.5;
-%               -0.4, rReact+0.7;
-%                -.5, rReact + .0000001;];
-            
-            
-            
+%Load unknown polygons
+load('small_box_unknown.mat');
+                  
 xO = [-0.15,rReact;
       0.15, rReact;     
       0.02, rReact+0.5;];
@@ -56,7 +51,7 @@ b = [];
 
 xStart = [0.0, .1, 0, 1, 0]'; %Where and how fast am I going?
 catXc = repmat([0; xStart(1:2); 0; 0; 0; 0; 0;], K, 1);
-uStart =  [.2 .1]';
+uStart =  [.2 .3]';
 
 x0 = [deltaT; xStart; uStart];
 
@@ -95,8 +90,8 @@ lb(5:nx+nu:end-nx) = 0.1;
 ub(5:nx+nu:end-nx) = 1.8;
 %ub(5:nx:controlIndex-1) = pi/deltaT - .1;
 %lb(5:nx:controlIndex-1) = -pi/deltaT +.1;
-ub(nx+2:nx+nu:end-nx) = accelBounds(1);  %%Bound the acceleration
-lb(nx+2:nx+nu:end-nx) = accelBounds(2);
+ub(nx+2:nx+nu:end-nx) = accelBounds(2);  %%Bound the acceleration
+lb(nx+2:nx+nu:end-nx) = accelBounds(1);
 
 lb(nx+nu+1:nx+nu:end-nx) = turnBounds(1);
 ub(nx+nu+1:nx+nu:end-nx) = turnBounds(2); %%Bound the turn rate
@@ -115,29 +110,53 @@ options =optimoptions(options,'CheckGradients',false);
 options =optimoptions(options,'SpecifyConstraintGradient', true);
 
 
-figure 
-hold on
-
 
 %%Solve the thing
 profile on
 
 tic
-result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+if(testing)
+    load('testingTraj.mat')
+    if(warmstart)
+        x0 = plannedTraj;
+        plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+    end
+else
+    plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+end
 toc
 
-[u,v] = pol2cart(result(4:(nx+nu):end),result(5:(nx+nu):end));
+plotObstacles_Traj(plannedTraj,polygons, unknownObst);
 
-%%Plot the x,y solutions
+realizedTraj = simulateRobot(plannedTraj);
 
-quiver(result(2:(nx+nu):end), result(3:(nx+nu):end),u,v,'b');
-axis([-1 2 -1 2])
+plotObstacles_Traj(realizedTraj,polygons, unknownObst);
 
 
-for i = 1:numObst
-plot(polygons{i}(:,1),polygons{i}(:,2),'r')
-%viscircles(xO(i,:),.1) %How far away did the robot need to be from the obstacle? Plot this
+%%Now do the same thing with my method
 
+nonlcon = @knotViewConstraints; %basicDynamicsConstraints;%
+fun = @minTimeCost;
+tic
+if(testing)
+    load('testingTraj.mat')
+    if(warmstart)
+        x0 = plannedTraj;
+        plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+    end
+else
+    plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
 end
+toc
+
+plotObstacles_Traj(plannedTraj,polygons, unknownObst);
+
+realizedTraj = simulateRobot(plannedTraj);
+
+plotObstacles_Traj(realizedTraj,polygons, unknownObst);
+
 
 profile viewer
+
+
+

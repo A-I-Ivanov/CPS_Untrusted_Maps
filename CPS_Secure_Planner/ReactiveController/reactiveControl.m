@@ -1,4 +1,4 @@
-function controls = reactiveControl(xStart, obstaclePoint, xSetpoint)
+function controls = reactiveControl(xStart, obstaclePoint, xSetpoint, newDT, rSteps)
 
 global  nx nu xO rSafe terminal turnBounds velBounds accelBounds reactiveSteps%top level globals
 global  block catXc %this function's globals
@@ -11,9 +11,16 @@ accelBounds = [-1 1];
 
 
 persistent deltaT Tf A b lb ub Aeq fun nonlcon options   
-if(isempty(Tf))
-    deltaT = 0.1;
-    reactiveSteps = 10; %Number of time steps
+if(isempty(Tf) || isempty(newDT)==0)
+    
+    if(isempty(newDT))
+        deltaT = 0.1;
+        reactiveSteps = 10; %Number of time steps
+    else
+        deltaT = newDT;
+        reactiveSteps = rSteps;
+    end
+   
     Tf = reactiveSteps*deltaT; %Final time
 
     %Note when pointing straight down with one obstacle at [+-.0001, -rReact]'
@@ -63,15 +70,21 @@ if(isempty(Tf))
     ub(nx+nu+1:nx+nu:end) = turnBounds(2); %%Bound the turn rate
     lb(nx+nu+1:nx+nu:end) = turnBounds(1);
 
-    options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 100, 'MaxFunEvals', 10000,'TolX', 1e-15);
+    options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 200, 'MaxFunEvals', 20000,'TolX', 1e-16);
     options =optimoptions(options,'OptimalityTolerance', 1e-4);
     options =optimoptions(options,'ConstraintTolerance', 1e-5); 
 end
 
+if(xStart(5)>0)
+    uTurn = turnBounds(1);
+else if(xStart(5)<0)
+    uTurn = turnBounds(2);
+    else
+       uTurn =0; 
+    end
+end
 
-
-
-uStart =  [accelBounds(1) 0]';
+uStart =  [accelBounds(1) uTurn]';
 
 x0 = [deltaT; xStart;];
 
@@ -98,7 +111,7 @@ tic
 result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
 toc
    
-controls = result(nx+1:nx+nu+1);    
+controls = result(2+nx:nx+nu+1);    
   
   
 end

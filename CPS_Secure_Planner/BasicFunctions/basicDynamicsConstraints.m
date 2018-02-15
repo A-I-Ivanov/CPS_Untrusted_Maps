@@ -94,7 +94,7 @@ global nx nu K
 
     function distConst = calcDistConst(xNow)
         
-        distConst = -obstDistance(xNow(1:2), [], xNow(4)); %Check distance of elipse to obstacles
+        distConst = -obstDistance(xNow(1:2), [], xNow(4)); 
         
     end
 
