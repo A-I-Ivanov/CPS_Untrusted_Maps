@@ -41,7 +41,7 @@ for i=1:length(unknownObst)
    
    %Can we see the unknown obstacle?
    [x_u,y_u, un_obst_inx] = polyxpoly(rotVert(1,:), rotVert(2,:), unknownObst{i}(1,:), unknownObst{i}(2,:));
-   if(isempty(x_u))
+   if(isempty(x_u) && inpolygon(unknownObst{i}(1,1), unknownObst{i}(2,1),rotVert(1,:), rotVert(2,:)) ==0)
        continue; %Do nothing if we cant see the unknown obstacle
    else 
        

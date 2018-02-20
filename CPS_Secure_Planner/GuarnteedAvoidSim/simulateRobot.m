@@ -1,4 +1,4 @@
-function [ realizedTraj ] = simulateRobot( plannedTraj )
+function [ realizedTraj, setPoint ] = simulateRobot( plannedTraj)
 %SIMULATE Summary of this function goes here
 %   Detailed explanation goes here
 global nx nu polygons rSensor thetaSensor unknownObst K
@@ -10,15 +10,17 @@ realizedTraj(2:nx+1) = xNow;
 obstacleDetected = 0;
 setPoint = [];
 dT = plannedTraj(1);
-reactiveSteps =10;
+baseSteps =10;
+reactiveSteps =baseSteps;
 %Main simulation loop
+
 for i =1:K-1
    obstPoint = checkObstacles(xNow, polygons, rSensor, thetaSensor);
    if(obstacleDetected || isempty(obstPoint)==0)
        if(isempty(setPoint))
             obstacleDetected =1;
             setPoint = xNow;
-            lastObstPoint = obstPoint;
+            lastObstPoint = obstPoint; 
        end
        
        if(reactiveSteps<=1)
@@ -26,10 +28,14 @@ for i =1:K-1
        end
        
        if(isempty(obstPoint)) %If we can't see anything, we assume the object point remains the same
-           uNow = reactiveControl(xNow,lastObstPoint, setPoint, plannedTraj(1),reactiveSteps);
+           uNow = reactiveControl(xNow,lastObstPoint, setPoint, .1,reactiveSteps, 1);
        else
            lastObstPoint = obstPoint;
-           uNow = reactiveControl(xNow,obstPoint, setPoint, plannedTraj(1),reactiveSteps);
+            if(reactiveSteps == baseSteps)
+                uNow = reactiveControl(xNow,obstPoint, setPoint, .1,reactiveSteps,0);
+            else
+                uNow = reactiveControl(xNow,obstPoint, setPoint, .1,reactiveSteps, 1);
+            end
        end
        
        reactiveSteps = reactiveSteps-1;
@@ -37,6 +43,9 @@ for i =1:K-1
        uNow = plannedControls(:,i);
        dT = plannedTraj(1);
    end
+   
+  
+
    
    xNow = diffDriveKinematics(xNow, uNow, dT);
    realizedTraj(i*(nx+nu)+2:(i+1)*(nx+nu)+1) = [xNow;uNow];

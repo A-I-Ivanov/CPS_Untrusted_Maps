@@ -3,7 +3,7 @@ clear all
 close all
 addpath('../BasicFunctions') ;
 addpath('../ReactiveController');
-global deltaT  K nx nu  xStart xO rSafe rReact rSensor thetaSensor xT  polygons
+global deltaT  K nx nu  xStart rSafe rReact rSensor thetaSensor xT  polygons
 global num1 num2  catXc turnBounds velBounds accelBounds unknownObst
 num1 =0; num2=0;
 
@@ -12,46 +12,47 @@ numObst =1;
 testing =0;
 warmstart = 0;
 
-deltaT = 0.05;
+deltaT = 0.1;
 reactiveDT = .1;
-K = 30; %Number of time steps
+K = 15; %Number of time steps
 Tf = K*deltaT; %Final time
 nx = 5; %The state number [x,y, orientation, linear speed, angular speed]
 nu = 2; %The number of controls [acceleration, turn rate]
-rSensor = 1;
+rSensor = 2;
 rReact = .8; %The sensed range of an obstacle (when should our controller activate?)
-rSafe = .3;
+rSafe = .05;
 thetaSensor = pi/3; %The angular range we care about (roughly in front of us)
 
 
 turnBounds = [-4 4];
-velBounds = [0.1, 1.8];
-accelBounds = [-1 1];
+velBounds = [0.0, 1.8];
+accelBounds = [-1.2 1.2];
 
 
 %Note when pointing straight down with one obstacle at [+-.0001, -rReact]'
 %the solver fails. No known reason yet
-xT = [1.2 , 1.5, (pi/2)]'; % .5, 0]'; %My referance point (the position I wnant to be close to)
+%xT = [1.2 , 1.5, (pi/2)]'; % .5, 0]'; %My referance point (the position I wnant to be close to)
             %The location of my obstacles
+xT = [0 , 1.2, (pi/2)]'; % .5, 0]'; %My referance point (the position I wnant to be close to)
             
 %Load test known polygons            
-load('large_box_known.mat');
+%load('large_box_known.mat');
+
+polygons{1} = [-0.5,-.25,-.25;0,0,.5];
+polygons{2} = [0.5,.25,.25;0,0,.5];
+
 
 %Load unknown polygons
-load('small_box_unknown.mat');
+%load('small_box_unknown.mat');
                   
-xO = [-0.15,rReact;
-      0.15, rReact;     
-      0.02, rReact+0.5;];
 
-nonlcon = @basicDynamicsConstraints;%knotViewConstraints; %
-fun = @minTimeCost;
 A = [];
 b = [];
 
-xStart = [0.0, .1, 0, 1, 0]'; %Where and how fast am I going?
+%xStart = [0.0, .1, 0, .5, 0]'; %Where and how fast am I going?
+xStart = [0.0, -.5, pi/2, 1, 0]'; %Where and how fast am I going?
 catXc = repmat([0; xStart(1:2); 0; 0; 0; 0; 0;], K, 1);
-uStart =  [.2 .3]';
+uStart =  [.1 0]';
 
 x0 = [deltaT; xStart; uStart];
 
@@ -86,6 +87,7 @@ ub = lb;
 lb = lb-Inf; %What are the upper and lower bounds of my states and controls?
 ub = ub+Inf;
 lb(1) = .001;
+%ub(1) = .3;
 lb(5:nx+nu:end-nx) = 0.1;
 ub(5:nx+nu:end-nx) = 1.8;
 %ub(5:nx:controlIndex-1) = pi/deltaT - .1;
@@ -108,13 +110,19 @@ options =optimoptions(options,'GradObj', 'on');
 options =optimoptions(options,'SpecifyObjectiveGradient',true);
 options =optimoptions(options,'CheckGradients',false);
 options =optimoptions(options,'SpecifyConstraintGradient', true);
+options = optimoptions(options, 'UseParallel',true);
 
 
 
 %%Solve the thing
 profile on
 
+nonlcon = @basicDynamicsConstraints;%knotViewConstraints; %
+fun = @minTimeCost;
+
+
 tic
+
 if(testing)
     load('testingTraj.mat')
     if(warmstart)
@@ -126,20 +134,19 @@ else
 end
 toc
 
-plotObstacles_Traj(plannedTraj,polygons, unknownObst);
+plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
 
-realizedTraj = simulateRobot(plannedTraj);
+%[realizedTraj, setPoint] = simulateRobot(plannedTraj);
 
-plotObstacles_Traj(realizedTraj,polygons, unknownObst);
+%plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
 
 
 %%Now do the same thing with my method
-
 nonlcon = @knotViewConstraints; %basicDynamicsConstraints;%
 fun = @minTimeCost;
 tic
-if(testing)
-    load('testingTraj.mat')
+if(testing || warmstart)
+    load('guaranteedTraj.mat')
     if(warmstart)
         x0 = plannedTraj;
         plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
@@ -149,11 +156,11 @@ else
 end
 toc
 
-plotObstacles_Traj(plannedTraj,polygons, unknownObst);
+plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
 
-realizedTraj = simulateRobot(plannedTraj);
+%[realizedTraj, setPoint] = simulateRobot(plannedTraj);
 
-plotObstacles_Traj(realizedTraj,polygons, unknownObst);
+%plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
 
 
 profile viewer
