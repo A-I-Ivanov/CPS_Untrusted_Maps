@@ -97,8 +97,8 @@ for k = 1:velDisc
     %lb(5:nx:controlIndex-1) = -pi/deltaT +.1;
     ub(nx+2:nx+nu+1:end) = 1;  %%Bound the acceleration
     lb(nx+2:nx+nu+1:end) = -1;    
-    ub(nx+nu+1:nx+nu+1:end) = 40; %%Bound the turn rate
-    lb(nx+nu+1:nx+nu+1:end) = -40;
+    ub(nx+nu+1:nx+nu+1:end) = 4; %%Bound the turn rate
+    lb(nx+nu+1:nx+nu+1:end) = -4;
 
 
     %Some options for the optimizer

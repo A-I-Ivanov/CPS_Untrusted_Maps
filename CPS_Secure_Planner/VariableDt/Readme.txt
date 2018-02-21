@@ -1,0 +1,1 @@
+This is a work in progress which sets up the same problem with variable delta T between points. 

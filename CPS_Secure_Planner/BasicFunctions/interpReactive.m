@@ -26,8 +26,8 @@ if isempty(indexVels)
 
     pAy = zeros(1,4);
     pAx = sigm_fit(indexVels,  velData(:,2)', [.000359216275074815, NaN,NaN,NaN],[],0);
-    pQx = sigm_fit(indexVels,  velData(:,3)', [.000196504917537513,  NaN,NaN,NaN],[],0);
-    pQy = sigm_fit(indexVels,  velData(:,4)', [.000359216275074815, NaN,NaN,NaN],[],0);
+    pQy = sigm_fit(indexVels,  velData(:,3)', [.000196504917537513,  NaN,NaN,NaN],[],0);
+    pQx = sigm_fit(indexVels,  velData(:,4)', [.000359216275074815, NaN,NaN,NaN],[],0);
     
     pAy(1) = max(pAy(1),0);
     pAx(1) = max(pAx(1),0);

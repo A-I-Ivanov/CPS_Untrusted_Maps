@@ -1,16 +1,9 @@
-function controls = reactiveControl(xStart, obstaclePoint, xSetpoint, newDT, rSteps)
+function controls = reactiveControl(xStart, obstaclePoint, xSetpoint, newDT, rSteps, warmstart)
 
 global  nx nu xO rSafe terminal turnBounds velBounds accelBounds reactiveSteps%top level globals
 global  block catXc %this function's globals
 
-rSafe = .3;
-nx = 5; nu =2;
-turnBounds = [-4 4];
-velBounds = [0.0, 1.8];
-accelBounds = [-1 1];
-
-
-persistent deltaT Tf A b lb ub Aeq fun nonlcon options   
+persistent deltaT Tf A b lb ub Aeq fun nonlcon options lastPath
 if(isempty(Tf) || isempty(newDT)==0)
     
     if(isempty(newDT))
@@ -73,6 +66,7 @@ if(isempty(Tf) || isempty(newDT)==0)
     options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 200, 'MaxFunEvals', 20000,'TolX', 1e-16);
     options =optimoptions(options,'OptimalityTolerance', 1e-4);
     options =optimoptions(options,'ConstraintTolerance', 1e-5); 
+    %options = optimoptions(options, 'UseParallel',true);
 end
 
 if(xStart(5)>0)
@@ -86,17 +80,22 @@ end
 
 uStart =  [accelBounds(1) uTurn]';
 
-x0 = [deltaT; xStart;];
 
-xlast = x0;
+if(warmstart)
+    x0 = lastPath;
+else
+     x0 = [deltaT; xStart;];
 
-stateOnly = xStart;
-%The optimizer needs a single vector. This is [x1, x2,....., u1,u2.....]
+    xlast = x0;
 
-for i =1:reactiveSteps-1
-    stateOnly = diffDriveKinematics(stateOnly,uStart, deltaT);
-    xlast = [uStart; stateOnly];
-    x0 = vertcat(x0, xlast);   %I neeed an initial guess of my trajecoty
+    stateOnly = xStart;
+    %The optimizer needs a single vector. This is [x1, x2,....., u1,u2.....]
+
+    for i =1:reactiveSteps-1
+        stateOnly = diffDriveKinematics(stateOnly,uStart, deltaT);
+        xlast = [uStart; stateOnly];
+        x0 = vertcat(x0, xlast);   %I neeed an initial guess of my trajecoty
+    end
 end
 
 
@@ -110,7 +109,9 @@ beq = [xStart; deltaT;];
 tic
 result = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
 toc
-   
+lastPath = zeros(length(result)-nx-nu,1);
+lastPath(1) = result(1);
+lastPath(2:end) = result(2+nx+nu:end);
 controls = result(2+nx:nx+nu+1);    
   
   
