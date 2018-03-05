@@ -1,3 +1,4 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 function [a,Q] = interpReactive(velocity)
 
 %scaling = mod(velocity, .1); %We discretized velocity into .1m/s previously

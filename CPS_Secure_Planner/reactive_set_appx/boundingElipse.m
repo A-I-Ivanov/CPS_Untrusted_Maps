@@ -1,4 +1,6 @@
 function elipseParams = boundingElipse(xData, yData)
+%This function fits the minimu bounding 2D elispe to a set of trajectory
+%data
 global vectorized 
     
     vectorized = [xData, yData];

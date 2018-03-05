@@ -1,5 +1,10 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 function [cin, eqconst, DCIn, DCeq] = knotViewConstraints(x)
     finDiffDelta = 1e-6;
+    
+%This function provides dynamic defect constraints as well as 
+%visibility constraints and distance constraints for the reactive 
+%set
 global nx nu K rSensor thetaSensor num2 num1
 
     E = eye(nx);
@@ -51,6 +56,7 @@ global nx nu K rSensor thetaSensor num2 num1
         cin(numConst*(K-deltaEye)+l) = cVal;
         
         %Take care of terminal inequality constraints
+        %These have no analytic form so we do finite differences 
         for k=1:nx
             vDelt = finDiffDelta*E(:,k);
             deltDistPlus = calcDistConst(xNow +vDelt); %Check distance to obstacles
@@ -134,7 +140,8 @@ global nx nu K rSensor thetaSensor num2 num1
         
         
         %The remaining eqconst are safety visual contraints
-        %They utilze eliptic transformations 
+        %They utilze eliptic transformations to take the reactive 
+        %set to the unit circle. This is script F in the paper
         [a,Q] = interpReactive(x2C(4));
         COS = cos(x2C(3)); SIN = sin(x2C(3));
         aRot = [COS -SIN; 
@@ -177,8 +184,7 @@ global nx nu K rSensor thetaSensor num2 num1
         
         sqrtQTic = chol(inv(QTic));
         
-        %This is technically wrong. Should be using a different Q and a
-        ineqs(1) = calcDistConst(xNow); %1-obstDistance(xNow(1:2)+aRot, sqrtQTic); %Check distance of elipse to obstacles
+        ineqs(1) = calcDistConst(xNow); %Check distance of elipse to obstacles
 
         
         x2Tic = sqrtQTic*xTic;
@@ -191,7 +197,6 @@ global nx nu K rSensor thetaSensor num2 num1
         
         %D = x cross normal vector
         
-        %Also these should be in linear inequality constriants
         %We normalize to one to get good constraint conditioning
         ineqs(3) = (-abs(prod(A1)/norm(A1))+ 1)/scale;
         ineqs(4) = (-abs(prod(A2)/norm(A2))+ 1)/scale;
@@ -204,7 +209,7 @@ global nx nu K rSensor thetaSensor num2 num1
             xNow(3) = wrapToPi(xNow(3)); %angle wrap
         end
         
-        %The remaining eqconst are safety visual contraints
+        %The remaining eqconst are safety distance contraints
         %They utilze eliptic transformations 
         [a,Q] = interpReactive(xNow(4));
         COS = cos(xNow(3)); SIN = sin(xNow(3));

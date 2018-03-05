@@ -1,3 +1,5 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
+%%This is a simple distnace function to point obstacles
 function dist =  obstDistance(x)
 global xO
 numObst = size(xO);

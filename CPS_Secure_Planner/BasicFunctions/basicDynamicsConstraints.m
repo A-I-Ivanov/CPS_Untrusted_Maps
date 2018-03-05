@@ -1,5 +1,10 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 function [cin, eqconst, DCIn, DCeq] = basicDynamicsConstraints(x)
     finDiffDelta = 1e-6;
+    
+%These constraints use a Euler approximation to the defect constraints 
+%of a differential drive robot. More accurate defects are required 
+%for robots with fast or complex dynamics.
 global nx nu K
 
     E = eye(nx);

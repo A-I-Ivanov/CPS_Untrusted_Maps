@@ -1,3 +1,4 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 function [cin, constraints] = kinematicWrapper(x)
 global nx nu K xO rSafe
     constraints = zeros(nx*(K-1),1);

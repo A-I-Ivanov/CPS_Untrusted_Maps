@@ -1,7 +1,11 @@
 function [ realizedTraj, setPoint ] = simulateRobot( plannedTraj)
-%SIMULATE Summary of this function goes here
-%   Detailed explanation goes here
-global nx nu polygons rSensor thetaSensor unknownObst K
+%This function is a simple simulator for the obstacle-detection
+%and avoidance scenario. The optimal path is followed. When an unknown
+%obstacle is located, the reactive controller is activated.
+%Note that this simulator does not directly evaluate the safety of 
+%The remaining path, but assumes that the new obstacle is obstructing
+%the planned trajectory. 
+global nx nu polygons rSensor thetaSensor unknownObst K velBounds
 plannedControls(1,:) = plannedTraj(2+nx:nx+nu:end);
 plannedControls(2,:) = plannedTraj(3+nx:nx+nu:end);
 xNow = plannedTraj(2:nx+1);
@@ -28,13 +32,13 @@ for i =1:K-1
        end
        
        if(isempty(obstPoint)) %If we can't see anything, we assume the object point remains the same
-           uNow = reactiveControl(xNow,lastObstPoint, setPoint, .1,reactiveSteps, 1);
+           uNow = reactiveControl(xNow,lastObstPoint, setPoint, .1,reactiveSteps, 1)
        else
            lastObstPoint = obstPoint;
             if(reactiveSteps == baseSteps)
-                uNow = reactiveControl(xNow,obstPoint, setPoint, .1,reactiveSteps,0);
+                uNow = reactiveControl(xNow,obstPoint, setPoint, .1,reactiveSteps,0)
             else
-                uNow = reactiveControl(xNow,obstPoint, setPoint, .1,reactiveSteps, 1);
+                uNow = reactiveControl(xNow,obstPoint, setPoint, .1,reactiveSteps, 1)
             end
        end
        
@@ -48,9 +52,11 @@ for i =1:K-1
 
    
    xNow = diffDriveKinematics(xNow, uNow, dT);
+   
+   xNow = checkBounds(xNow);
+   
    realizedTraj(i*(nx+nu)+2:(i+1)*(nx+nu)+1) = [xNow;uNow];
-   if( inpolygon(xNow(1), xNow(2), unknownObst{1}(1,:),unknownObst{1}(2,:)))
-       
+   if( isempty(unknownObst) ==0 && inpolygon(xNow(1), xNow(2), unknownObst{1}(1,:),unknownObst{1}(2,:)))
        break
    end
    
@@ -58,6 +64,17 @@ for i =1:K-1
 end
 
 
+
+    function correctedX = checkBounds(x)
+        correctedX = x;
+        if(x(4)<velBounds(1))
+            correctedX(4) = velBounds(1);
+        end
+        if(x(4)>velBounds(2))
+            correctedX(4) = velBounds(2);
+        end
+ 
+    end
 
 
 

@@ -1,3 +1,4 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 function [cin, constraints] = knotViewConstraints(x)
 global nx nu K xStart xO rSafe rSensor rReact thetaSensor num2 num1
     a = [0.1978 0];

@@ -1,3 +1,4 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 %This code simulates a robot forward for 3 seconds using an MPC controller
 clear all
 close all

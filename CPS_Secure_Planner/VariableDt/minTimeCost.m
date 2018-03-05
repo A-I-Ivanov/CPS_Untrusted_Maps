@@ -1,3 +1,4 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 function cost = minTimeCost(x)
 global nx nu K xT
 terminal = 1000;

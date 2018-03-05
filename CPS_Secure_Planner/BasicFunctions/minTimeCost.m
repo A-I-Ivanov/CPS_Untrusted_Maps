@@ -1,3 +1,4 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 function [cost, g] = minTimeCost(x)
 global nx nu K xT
 

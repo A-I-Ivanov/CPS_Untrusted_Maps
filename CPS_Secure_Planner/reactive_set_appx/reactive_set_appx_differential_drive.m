@@ -1,4 +1,6 @@
 %This code simulates a robot forward for 3 seconds using an MPC controller
+%The simulations are used to generate bounding elipses and approximate the 
+%reactive set. 
 clear all
 close all
 global deltaT  K nx nu controlIndex xStart xO rSafe rReact rSensor thetaSensor xT terminal
@@ -7,8 +9,8 @@ num1 =0; num2=0;
 figure
 
 addpath('../ReactiveController');
-deltaV = 0.1;
-velDisc = 18;
+deltaV = 0.1; %Discretization parameter
+velDisc = 18; %How many points do we wish to simulate?
 elipseParams = zeros(velDisc, 4);
 
 deltaT = 0.1;

@@ -1,9 +1,8 @@
 function [ ] = plotObstacles_Traj( trajectory,polygons, unknownObst, xStart,xT, varargin)
-%PLOTOBSTACLES_TRAJ Summary of this function goes here
-%   Detailed explanation goes here
 % This is a plotting function which produces graphs for trajectory
 % optimization plans. The solid flag is used to plot a solid line
 % instead of a quiver plot
+% You can also visualize the reactive set ellipses
 global nx nu
 figure
 hold on

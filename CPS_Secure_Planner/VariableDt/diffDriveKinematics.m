@@ -1,3 +1,4 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 function xNew = diffDriveKinematics(x,u, deltaT)
 global nx
 xNew = zeros(nx,1);

@@ -1,6 +1,5 @@
 function [ R ] = rMatrix(thetaX, thetaY, thetaZ )
-%RMATRIX Summary of this function goes here
-%   Detailed explanation goes here
+%RMATRIX: a symple construction of the rotation matrix
    R = (rotz(thetaZ))*(roty(thetaY))*(rotx(thetaX));
    
     function Rz = rotz(theta)

@@ -1,3 +1,4 @@
+%%%%Written by Alexander I. Ivanov - 2017%%%%
 function d = d_point_to_line(pt, v1, v2)
 % pt should be nx3
 % v1 and v2 are vertices on the line (each 1x3)
