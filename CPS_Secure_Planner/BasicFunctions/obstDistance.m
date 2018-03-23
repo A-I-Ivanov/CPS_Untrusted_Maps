@@ -31,10 +31,10 @@ if(isempty(sqrtQ))
      return 
     
 else 
-    transX = sqrtQ*x(1:2);
+    %transX = sqrtQ*x(1:2);
      for i=1:numObst
-         transVert = sqrtQ* verticies{i};
-         distNow = norm(p_poly_dist(transX(1),transX(2), transVert(1,:), transVert(2,:))) -1;
+         transVert = sqrtQ* (verticies{i} - x(1:2));
+         distNow = norm(p_poly_dist(0,0 transVert(1,:), transVert(2,:))) -1;
          %distNow = norm(sqrtQ*(-x(1:2)+xO(i,:)'))-1;
         if( distNow < dist)
          dist = distNow;
