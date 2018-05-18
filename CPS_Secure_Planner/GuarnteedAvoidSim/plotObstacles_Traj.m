@@ -3,7 +3,7 @@ function [ ] = plotObstacles_Traj( trajectory,polygons, unknownObst, xStart,xT, 
 % optimization plans. The solid flag is used to plot a solid line
 % instead of a quiver plot
 % You can also visualize the reactive set ellipses
-global nx nu
+global nx nu thetaSensor
 figure
 hold on
 

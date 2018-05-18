@@ -14,16 +14,16 @@ numObst =1; %The number of obstacles
 testing =0;
 warmstart = 0;
 
-deltaT = 0.1; %Initial guess of deltaT
+deltaT = 0.2; %Initial guess of deltaT
 reactiveDT = .1; %DeltaT for the reactive controller 
-K = 25; %Number of time steps or knot points
+K = 15; %Number of time steps or knot points
 Tf = K*deltaT; %Final time
 nx = 5; %The state number [x,y, orientation, linear speed, angular speed]
 nu = 2; %The number of controls [acceleration, turn rate]
 rSensor = 2; %Sensor range 
 rReact = .8; %The sensed range of an obstacle (when should our controller activate?)
 rSafe = .1; %Avoidance distance for the reactive controller
-thetaSensor = pi/2.5; %The angular range of the sensor
+thetaSensor = pi/2.2; %The angular range of the sensor
 
 
 %These are bounds for acceleration and turn rate as well as velocity
@@ -103,9 +103,9 @@ ub(nx+nu+1:nx+nu:end-nx) = turnBounds(2); %%Bound the turn rate
 
 %Some options for the optimizer
 options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 200, 'MaxFunEvals', 10000, 'TolX', 1e-16);
-options =optimoptions(options,'OptimalityTolerance', 1e-6);
+options =optimoptions(options,'OptimalityTolerance', 1e-3);
 options =optimoptions(options,'Display','iter');
-options =optimoptions(options,'ConstraintTolerance', 1e-6); 
+options =optimoptions(options,'ConstraintTolerance', 1e-3); 
 options =optimoptions(options,'FiniteDifferenceType', 'central'); 
 options =optimoptions(options,'GradObj', 'on'); 
 options =optimoptions(options,'SpecifyObjectiveGradient',true);
@@ -122,26 +122,26 @@ nonlcon = @basicDynamicsConstraints;%Constriants for base-line planner
 fun = @minTimeCost;
 
 
-tic
-
-if(testing)
-    %Uncomment this line for testing and visualization. 
-    %load('testingTraj.mat') %Save your base-line trajectory to this file if you want
-    %to simply visualize the path
-    if(warmstart)
-        x0 = plannedTraj;
-        plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
-    end
-else
-    plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
-end
-toc
-
-plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
-
-[realizedTraj, setPoint] = simulateRobot(plannedTraj);
-
-plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
+% tic
+% 
+% if(testing)
+%     %Uncomment this line for testing and visualization. 
+%     %load('testingTraj.mat') %Save your base-line trajectory to this file if you want
+%     %to simply visualize the path
+%     if(warmstart)
+%         x0 = plannedTraj;
+%         plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+%     end
+% else
+%     plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+% end
+% toc
+% 
+% plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
+% 
+% [realizedTraj, setPoint] = simulateRobot(plannedTraj);
+% 
+% plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
 
 
 %%Now do the same thing with secure method

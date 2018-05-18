@@ -1,5 +1,5 @@
 %%%%Written by Alexander I. Ivanov - 2017%%%%
-function dist =  obstDistance(x, sqrtQ, v)
+function dist =  obstDistance(x, sqrtQ)
 %This function simply does a distance calculation via obstacle checks.
 %In more complex environments this code should be improved so that each
 %obstacle need not be checked. Note that this is not a true distance 

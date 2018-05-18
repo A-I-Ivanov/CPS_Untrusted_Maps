@@ -8,7 +8,7 @@ function [cin, eqconst, DCIn, DCeq] = knotViewConstraints(x)
 global nx nu K rSensor thetaSensor num2 num1
 
     E = eye(nx);
-    numConst = 6; 
+    numConst = 7; 
     numEqConst = nx*(K-1);
     deltaEye = 5;
     eqconst = zeros(numEqConst,1);
@@ -202,6 +202,13 @@ global nx nu K rSensor thetaSensor num2 num1
         ineqs(4) = (-abs(prod(A2)/norm(A2))+ 1)/scale;
         ineqs(5) = -y2Tic1(2)/scale;
         ineqs(6) = y2Tic2(2)/scale;
+        
+        xTangent = 1/x2Tic(1);
+        point_up   = [xTangent; abs(sqrt(1-xTangent^2));];
+        point_down = [xTangent; -abs(sqrt(1-xTangent^2));];
+        OccludeTriangle = [x2Tic, point_up, point_down];
+        
+        ineqs(7) = calcOcculusionConst( xNow, OccludeTriangle);
     end
 
     function distConst = calcDistConst(xNow)
@@ -222,9 +229,30 @@ global nx nu K rSensor thetaSensor num2 num1
         
         sqrtQTic = chol(inv(QTic));
         
-        distConst = -obstDistance(xNow(1:2)+arot, sqrtQTic, xNow(4)); %Check distance of elipse to obstacles
+        distConst = -obstDistance(xNow(1:2)+arot, sqrtQTic); %Check distance of elipse to obstacles
         
     end
+
+     function distConst = calcOcculusionConst(xNow, triangle)
+            if(abs(xNow(3))>pi)
+                xNow(3) = wrapToPi(xNow(3)); %angle wrap
+            end
+
+            %The remaining eqconst are safety distance contraints
+            %They utilze eliptic transformations 
+            [~,Q] = interpReactive(xNow(4));
+            COS = cos(xNow(3)); SIN = sin(xNow(3));
+
+            rotMat = [COS -SIN; 
+                      SIN COS];
+
+            QTic = rotMat*Q*rotMat';
+
+            sqrtQTic = chol(inv(QTic));
+
+            distConst =  -Dist2OccTri(xNow, triangle, sqrtQTic); %Check distance of elipse to obstacles
+
+        end
 
    
 end
