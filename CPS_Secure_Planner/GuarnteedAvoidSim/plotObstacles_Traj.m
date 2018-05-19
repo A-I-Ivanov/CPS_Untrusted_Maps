@@ -3,7 +3,7 @@ function [ ] = plotObstacles_Traj( trajectory,polygons, unknownObst, xStart,xT, 
 % optimization plans. The solid flag is used to plot a solid line
 % instead of a quiver plot
 % You can also visualize the reactive set ellipses
-global nx nu thetaSensor
+global nx nu thetaSensor rSensor
 figure
 hold on
 
@@ -35,6 +35,12 @@ if(length(varargin)>2)
    setPoint = varargin{3};
 else
    setPoint = [];
+end
+
+if(length(varargin)>3)
+   plotViews = varargin{4};
+else
+   plotViews = [];
 end
 
 if(solid)
@@ -118,6 +124,9 @@ set_speed = quiver(setPoint(1), setPoint(2),u*quiverScale,v*quiverScale,'b','Aut
 set_point = plot(setPoint(1), setPoint(2), 'rx', 'MarkerSize', 8, 'LineWidth',2);
 
 
+plot(setPoint(1), setPoint(2), 'rx', 'MarkerSize', 8, 'LineWidth',2);
+
+
 
 end
 
@@ -149,7 +158,17 @@ ylabel('Y in meters', 'FontSize',16)
 axis([-.55 2 -.6 2])
 axis equal
 
+if(plotViews)
+    for i = 5:10
+        rotMat = rMatrix(0,0, sThe(i));
+        triangle = [0, cos(thetaSensor), cos(thetaSensor), 0;
+                    0, sin(thetaSensor), -sin(thetaSensor), 0;]*rSensor;
 
+        triangle = rotMat(1:2,1:2)*triangle;
+        triangle = [triangle(1,:) + sX(i); triangle(2,:) + sY(i);];
+        plot(triangle(1,:), triangle(2,:), 'y','LineWidth',2);
+    end
+end
 
 end
 

@@ -208,7 +208,7 @@ global nx nu K rSensor thetaSensor num2 num1
         point_down = [xTangent; -abs(sqrt(1-xTangent^2));];
         OccludeTriangle = [x2Tic, point_up, point_down];
         
-        ineqs(7) = calcOcculusionConst( xNow, OccludeTriangle);
+        ineqs(7) = calcOcculusionConst( xNow, x2C, OccludeTriangle);
     end
 
     function distConst = calcDistConst(xNow)
@@ -229,18 +229,18 @@ global nx nu K rSensor thetaSensor num2 num1
         
         sqrtQTic = chol(inv(QTic));
         
-        distConst = -obstDistance(xNow(1:2)+arot, sqrtQTic); %Check distance of elipse to obstacles
+        distConst = -obstDistance(xNow(1:2)+arot, sqrtQTic, 0); %Check distance of elipse to obstacles
         
     end
 
-     function distConst = calcOcculusionConst(xNow, triangle)
+     function distConst = calcOcculusionConst(xNow, x2C, triangle)
             if(abs(xNow(3))>pi)
                 xNow(3) = wrapToPi(xNow(3)); %angle wrap
             end
 
             %The remaining eqconst are safety distance contraints
             %They utilze eliptic transformations 
-            [~,Q] = interpReactive(xNow(4));
+            [~,Q] = interpReactive(x2C(4));
             COS = cos(xNow(3)); SIN = sin(xNow(3));
 
             rotMat = [COS -SIN; 

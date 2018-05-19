@@ -1,5 +1,5 @@
 %%%%Written by Alexander I. Ivanov - 2017%%%%
-function [cin, eqconst, DCIn, DCeq] = basicDynamicsConstraints(x)
+function [cin, eqconst, DCIn, DCeq] = basicDynamicsConstraints(x, safetyDistance)
     finDiffDelta = 1e-6;
     
 %These constraints use a Euler approximation to the defect constraints 
@@ -99,7 +99,7 @@ global nx nu K
 
     function distConst = calcDistConst(xNow)
         
-        distConst = -obstDistance(xNow(1:2), [], xNow(4)); 
+        distConst = -obstDistance(xNow(1:2), [], safetyDistance); 
         
     end
 

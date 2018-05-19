@@ -8,10 +8,10 @@ global unknownObst;
 %obstacle which is just around the corner from the known obstacle
 persistent numRays verticies rays
 if(isempty(verticies))
-    numRays = floor(radtodeg(thetaSensor));
+    numRays = floor(radtodeg(2*thetaSensor));
     %We generate a triangle looking east from the origin
     verticies = zeros(2,4);
-    halfTheta = thetaSensor/2;
+    halfTheta = thetaSensor;
     verticies(:,2)= [cos(halfTheta)*rSensor; sin(halfTheta)*rSensor;];
     verticies(:,3)= [cos(-halfTheta)*rSensor; sin(-halfTheta)*rSensor;];
     
@@ -66,6 +66,7 @@ for i=1:length(unknownObst)
        if(sum(visiPoly) ==0)
            for j =1:numRays
                [x_u,y_u, ~] = polyxpoly([xNow(1) rotRays(1,j)], [xNow(2) rotRays(2,j) ], unknownObst{i}(1,:), unknownObst{i}(2,:));
+               
                [d2, pt] = calcMinDist(x_u, y_u, xNow(1:2));
 
                %If the distance to the unknown obstacle is less than that to

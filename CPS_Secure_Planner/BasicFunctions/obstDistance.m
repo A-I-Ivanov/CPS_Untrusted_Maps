@@ -1,16 +1,15 @@
 %%%%Written by Alexander I. Ivanov - 2017%%%%
-function dist =  obstDistance(x, sqrtQ)
+function dist =  obstDistance(x, sqrtQ, safetyDistance)
 %This function simply does a distance calculation via obstacle checks.
 %In more complex environments this code should be improved so that each
 %obstacle need not be checked. Note that this is not a true distance 
 %function since when x is inside and obstacle the distance is given as 
 %negative. This is necessary to help the NLP solve. 
 global xO rSafe rReact polygons
-persistent verticies safetyMargin
+persistent verticies 
 
 if isempty(verticies)
      verticies = polygons;
-     safetyMargin = .025;
 end
 
 numObst = length(verticies);
@@ -33,14 +32,14 @@ if(isempty(sqrtQ))
         end
      end
      
-     dist = dist-safetyMargin;
+     dist = dist-safetyDistance;
      return 
 
 %This distance is the distance of an elipse to polygonal obstacles.
 %We transform the obstacles then return the distnace to the unit circle. 
 else 
      for i=1:numObst
-         transVert = sqrtQ* (verticies{i} - x(1:2));
+         transVert = sqrtQ* ([verticies{i}(1,:) - x(1); verticies{i}(2,:) - x(2)]);
          distNow = norm(p_poly_dist(0,0, transVert(1,:), transVert(2,:))) -1;
         if( distNow < dist)
          dist = distNow;

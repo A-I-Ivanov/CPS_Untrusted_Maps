@@ -16,14 +16,14 @@ warmstart = 0;
 
 deltaT = 0.2; %Initial guess of deltaT
 reactiveDT = .1; %DeltaT for the reactive controller 
-K = 15; %Number of time steps or knot points
+K = 20; %Number of time steps or knot points
 Tf = K*deltaT; %Final time
 nx = 5; %The state number [x,y, orientation, linear speed, angular speed]
 nu = 2; %The number of controls [acceleration, turn rate]
 rSensor = 2; %Sensor range 
 rReact = .8; %The sensed range of an obstacle (when should our controller activate?)
 rSafe = .1; %Avoidance distance for the reactive controller
-thetaSensor = pi/2.2; %The angular range of the sensor
+thetaSensor = pi/3; %The angular range of the sensor
 
 
 %These are bounds for acceleration and turn rate as well as velocity
@@ -38,14 +38,14 @@ accelBounds = [-1.2 1.2];
 load('round_the_bend_test.mat');
 %load('passage_way_large.mat');
 %load('passage_way_small.mat');
-
-%%The Following is an example of how to set variables to run your own tests
+thetaSensor = pi/4;
+%%The Following is an example of how to set variables  to run your own tests
 %%All of these variables are contained in the files above for the senarios
 %%in our published work. 
 
 %xStart = [0.0, -.5, pi/2, 1, 0]'; %Where and how fast am I going?
 %xT = [0 , 1.2, (pi/2)]'; % .5, 0]'; %Terminal point 
-%uStart =  [.1 0]'; %guess of optimal controls
+uStart =  [.2 .4]'; %guess of optimal controls
 %polygons{1} = [-0.5,-.25,-.25;0,0,.5];
 %polygons{2} = [0.5,.25,.25;0,0,.5];
 
@@ -102,10 +102,10 @@ ub(nx+nu+1:nx+nu:end-nx) = turnBounds(2); %%Bound the turn rate
 
 
 %Some options for the optimizer
-options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 200, 'MaxFunEvals', 10000, 'TolX', 1e-16);
+options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 300, 'MaxFunEvals', 10000, 'TolX', 1e-12);
 options =optimoptions(options,'OptimalityTolerance', 1e-3);
 options =optimoptions(options,'Display','iter');
-options =optimoptions(options,'ConstraintTolerance', 1e-3); 
+options =optimoptions(options,'ConstraintTolerance', 1e-4); 
 options =optimoptions(options,'FiniteDifferenceType', 'central'); 
 options =optimoptions(options,'GradObj', 'on'); 
 options =optimoptions(options,'SpecifyObjectiveGradient',true);
@@ -117,44 +117,49 @@ options = optimoptions(options, 'UseParallel',true);
 
 %%Solve the thing
 profile on
-
-nonlcon = @basicDynamicsConstraints;%Constriants for base-line planner
+safetyDistance = .025;
+nonlcon = @(x) basicDynamicsConstraints(x, safetyDistance);%Constriants for base-line planner
 fun = @minTimeCost;
 
 
-% tic
-% 
-% if(testing)
-%     %Uncomment this line for testing and visualization. 
-%     %load('testingTraj.mat') %Save your base-line trajectory to this file if you want
-%     %to simply visualize the path
-%     if(warmstart)
-%         x0 = plannedTraj;
-%         plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
-%     end
-% else
-%     plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
-% end
-% toc
-% 
-% plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
-% 
-% [realizedTraj, setPoint] = simulateRobot(plannedTraj);
-% 
-% plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
+tic
+
+if(testing)
+    %Uncomment this line for testing and visualization. 
+    %load('testingTraj.mat') %Save your base-line trajectory to this file if you want
+    %to simply visualize the path
+    if(warmstart)
+        x0 = plannedTraj;
+        plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+    end
+else
+    plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+end
+toc
+
+plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
+
+[realizedTraj, setPoint] = simulateRobot(plannedTraj);
+
+plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
 
 
 %%Now do the same thing with secure method
 nonlcon = @knotViewConstraints; %Visibility constraints, dynamics, and reactive set constraints
 fun = @minTimeCost;
+warmstart=1;
 tic
 if(testing || warmstart)
+    safetyDistance = .1;
+    nonlcon = @(x) basicDynamicsConstraints(x, safetyDistance);%Constriants for base-line planner
+    plannedTraj = fmincon(fun,plannedTraj,A,b,Aeq,beq,lb,ub,nonlcon, options);
+    fun = @minTimeCost;
+    nonlcon = @knotViewConstraints;
     %Uncomment this line for testing and visualization. 
     %load('guaranteedTraj.mat') %Save your optimal trajectory to this file if you want
     %to simply visualize the path
     if(warmstart) %Note: If the warmstart path is highly infeasible, this will fail
-        x0 = plannedTraj;
-        plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+        plannedTraj = fmincon(fun,plannedTraj,A,b,Aeq,beq,lb,ub,nonlcon, options);
     end
 else
     plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);

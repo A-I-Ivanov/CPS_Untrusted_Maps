@@ -23,7 +23,7 @@ P1.y =  triangle(2,:);
 %This distance is the distance of an elipse to polygonal obstacles.
 %We transform the obstacles then return the distnace to the unit circle. 
  for i=1:numObst
-     transVert = sqrtQ* (verticies{i} - x(1:2));
+     transVert = sqrtQ* ([verticies{i}(1,:) - x(1); verticies{i}(2,:) - x(2)]);
      
      %%Check for intersecting obstacles
      for k =1:length(transVert)
