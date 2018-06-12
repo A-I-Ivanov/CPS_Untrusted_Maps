@@ -148,6 +148,13 @@ global nx nu K rSensor thetaSensor num2 num1
                 SIN COS]*a;
         xDiff = xNow(1:2)- x2C(1:2) - aRot;
         
+        if(false)
+        plot(xNow(1), xNow(2), 'rx');
+        hold on
+        [m,n] = pol2cart(x2C(3),.5);
+        quiver(x2C(1)+aRot(1), x2C(2)+aRot(2),m,n);
+        end
+        
         %%Has to be in sensor range
         ineqs(2) = (norm(xDiff - aRot) - rSensor)/rSensor; 
         theta12 = -atan2(xDiff(2), xDiff(1)) + pi;
@@ -184,6 +191,22 @@ global nx nu K rSensor thetaSensor num2 num1
         
         sqrtQTic = chol(inv(QTic));
         
+        %%debug
+        if(false)
+         t = linspace(-pi,pi,100);
+        circle = [cos(t); sin(t)];
+        COS = cos(x2C(3)); SIN = sin(x2C(3));
+        rotMat = [COS -SIN; 
+                  SIN COS];
+        ellipse = rotMat*chol(Q)*circle;
+        ellipse(1,:) = ellipse(1,:)+x2C(1)+aRot(1);
+        ellipse(2,:) = ellipse(2,:)+x2C(2)+aRot(2);
+        plot(ellipse(1,: ), ellipse(2,:),'r');
+        plot([xNow(1), xNow(1) + rSensor*cos(xNow(3)+thetaSensor)],[xNow(2), xNow(2) + rSensor*sin(xNow(3)+thetaSensor)],'g');
+        plot([xNow(1), xNow(1) + rSensor*cos(xNow(3)-thetaSensor)],[xNow(2), xNow(2) + rSensor*sin(xNow(3)-thetaSensor)],'g');
+        plot([xNow(1) + rSensor*cos(xNow(3)+thetaSensor), xNow(1) + rSensor*cos(xNow(3)-thetaSensor)],[xNow(2) + rSensor*sin(xNow(3)+thetaSensor), xNow(2) + rSensor*sin(xNow(3)-thetaSensor)],'g');
+        end
+        
         ineqs(1) = calcDistConst(xNow); %Check distance of elipse to obstacles
 
         
@@ -208,6 +231,8 @@ global nx nu K rSensor thetaSensor num2 num1
         point_down = [xTangent; -abs(sqrt(1-xTangent^2));];
         OccludeTriangle = [x2Tic, point_up, point_down];
         
+
+        
         ineqs(8) = calcOcculusionConst( xNow, x2C, OccludeTriangle);
         
         
@@ -216,16 +241,24 @@ global nx nu K rSensor thetaSensor num2 num1
         normals = [-sin(thetaSensor) -sin(thetaSensor)  1;
            -cos(thetaSensor) cos(thetaSensor)   0;];
         b = [0;0;cos(thetaSensor)*rSensor;];
-        
-        
+
         COS = cos(xNow(3)); SIN = sin(xNow(3));
         rot_normals = [COS -SIN; 
                        SIN COS]*normals;
                    
         %%Check ellipsoidal contianment
-        test_eqs(1:3) = rot_normals'*(x2C(1:2) + aRot - xNow(1:2)) - b;
+        if(false)
+        testNorms = [rot_normals(1,:);rot_normals(2,:)];
+        plot([xNow(1),testNorms(1,1)+xNow(1)],[xNow(2),testNorms(2,1)+xNow(2)],'r')
+        plot([xNow(1),testNorms(1,2)+xNow(1)],[xNow(2),testNorms(2,2)+xNow(2)],'r')
+        plot([xNow(1),testNorms(1,3)+xNow(1)],[xNow(2),testNorms(2,3)+xNow(2)],'r')
         
-        b_translate = rot_normals'*(xNow(1:2)-x2C(1:2)); 
+        
+        axis([-2,2,-2,2])
+        end
+        
+        test_eqs(1:3) = rot_normals'*(x2C(1:2) + aRot - xNow(1:2)) - b;
+        b_translate = rot_normals'*(xNow(1:2)-(x2C(1:2)+aRot)); 
         b_new  = b + b_translate;
         
         COS = cos(xNow(3)); SIN = sin(xNow(3));
@@ -240,21 +273,11 @@ global nx nu K rSensor thetaSensor num2 num1
         
         test_eqs(4:6) = 1- b_new.^2;
         
-        if(sign(test_eqs(4:5)) ~= sign(ineqs(3:4)))
-            tester = 1; %This should never happen
-        end
-        
-        if(sign(test_eqs(6)) ~= sign(ineqs(2)))
-            tester = 1; %this may happen
-        end
-        
-        if(sign(test_eqs(1:2)) ~= sign(ineqs(5:6)))
-           tester = 1; %Should never happen
-        end
         
         
         ineqs(2:7) = test_eqs;
         
+% %         hold off
         
     end
 
