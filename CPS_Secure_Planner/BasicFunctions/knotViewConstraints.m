@@ -8,7 +8,7 @@ function [cin, eqconst, DCIn, DCeq] = knotViewConstraints(x)
 global nx nu K rSensor thetaSensor num2 num1
 
     E = eye(nx);
-    numConst = 7; 
+    numConst = 8; 
     numEqConst = nx*(K-1);
     deltaEye = 5;
     eqconst = zeros(numEqConst,1);
@@ -208,7 +208,54 @@ global nx nu K rSensor thetaSensor num2 num1
         point_down = [xTangent; -abs(sqrt(1-xTangent^2));];
         OccludeTriangle = [x2Tic, point_up, point_down];
         
-        ineqs(7) = calcOcculusionConst( xNow, x2C, OccludeTriangle);
+        ineqs(8) = calcOcculusionConst( xNow, x2C, OccludeTriangle);
+        
+        
+        %%Begin testing of polyhedral notation 
+        
+        normals = [-sin(thetaSensor) -sin(thetaSensor)  1;
+           -cos(thetaSensor) cos(thetaSensor)   0;];
+        b = [0;0;cos(thetaSensor)*rSensor;];
+        
+        
+        COS = cos(xNow(3)); SIN = sin(xNow(3));
+        rot_normals = [COS -SIN; 
+                       SIN COS]*normals;
+                   
+        %%Check ellipsoidal contianment
+        test_eqs(1:3) = rot_normals'*(x2C(1:2) + aRot - xNow(1:2)) - b;
+        
+        b_translate = rot_normals'*(xNow(1:2)-x2C(1:2)); 
+        b_new  = b + b_translate;
+        
+        COS = cos(xNow(3)); SIN = sin(xNow(3));
+        rot_normals = [COS -SIN; 
+                       SIN COS]*rot_normals;
+        
+        scew_norm = inv(chol(inv(Q)))'*rot_normals;
+        
+        for p =1:length(b)
+            b_new(p) = b_new(p)/(norm(scew_norm(:,p)));
+        end
+        
+        test_eqs(4:6) = 1- b_new.^2;
+        
+        if(sign(test_eqs(4:5)) ~= sign(ineqs(3:4)))
+            tester = 1; %This should never happen
+        end
+        
+        if(sign(test_eqs(6)) ~= sign(ineqs(2)))
+            tester = 1; %this may happen
+        end
+        
+        if(sign(test_eqs(1:2)) ~= sign(ineqs(5:6)))
+           tester = 1; %Should never happen
+        end
+        
+        
+        ineqs(2:7) = test_eqs;
+        
+        
     end
 
     function distConst = calcDistConst(xNow)

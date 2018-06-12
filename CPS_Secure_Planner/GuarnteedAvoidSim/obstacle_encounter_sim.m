@@ -116,32 +116,32 @@ options = optimoptions(options, 'UseParallel',true);
 
 
 %%Solve the thing
-profile on
-safetyDistance = .025;
-nonlcon = @(x) basicDynamicsConstraints(x, safetyDistance);%Constriants for base-line planner
-fun = @minTimeCost;
-
-
-tic
-
-if(testing)
-    %Uncomment this line for testing and visualization. 
-    %load('testingTraj.mat') %Save your base-line trajectory to this file if you want
-    %to simply visualize the path
-    if(warmstart)
-        x0 = plannedTraj;
-        plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
-    end
-else
-    plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
-end
-toc
-
-plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
-
-[realizedTraj, setPoint] = simulateRobot(plannedTraj);
-
-plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
+% profile on
+% safetyDistance = .025;
+% nonlcon = @(x) basicDynamicsConstraints(x, safetyDistance);%Constriants for base-line planner
+% fun = @minTimeCost;
+% 
+% 
+% tic
+% 
+% if(testing)
+%     %Uncomment this line for testing and visualization. 
+%     %load('testingTraj.mat') %Save your base-line trajectory to this file if you want
+%     %to simply visualize the path
+%     if(warmstart)
+%         x0 = plannedTraj;
+%         plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+%     end
+% else
+%     plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+% end
+% toc
+% 
+% plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
+% 
+% [realizedTraj, setPoint] = simulateRobot(plannedTraj);
+% 
+% plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
 
 
 %%Now do the same thing with secure method
