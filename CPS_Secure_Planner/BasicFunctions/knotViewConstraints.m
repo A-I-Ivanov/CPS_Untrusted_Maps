@@ -138,61 +138,30 @@ global nx nu K rSensor thetaSensor num2 num1
             xNow(3) = wrapToPi(xNow(3)); %angle wrap
         end
         
-        
+        ineqs(1) = calcDistConst(xNow); %Check distance of elipse to obstacles
+
         %The remaining eqconst are safety visual contraints
         %They utilze eliptic transformations to take the reactive 
         %set to the unit circle. This is script F in the paper
         [a,Q] = interpReactive(x2C(4));
         COS = cos(x2C(3)); SIN = sin(x2C(3));
-        aRot = [COS -SIN; 
-                SIN COS]*a;
+        rotMat = [COS -SIN; 
+                SIN COS];
+        aRot = rotMat*a;
         xDiff = xNow(1:2)- x2C(1:2) - aRot;
         
-        if(false)
+        if(true)
         plot(xNow(1), xNow(2), 'rx');
         hold on
         [m,n] = pol2cart(x2C(3),.5);
         quiver(x2C(1)+aRot(1), x2C(2)+aRot(2),m,n);
         end
         
-        %%Has to be in sensor range
-        ineqs(2) = (norm(xDiff - aRot) - rSensor)/rSensor; 
-        theta12 = -atan2(xDiff(2), xDiff(1)) + pi;
-        
-        COS = cos(theta12); SIN = sin(theta12);
-        rotMat = [COS -SIN; 
-                  SIN COS];
-        xTic = rotMat*xDiff;
-        
-        
-        %Make sure we actually have intercepts
-        angUp = thetaSensor + xNow(3) + theta12;
-        angDown = -thetaSensor + xNow(3) + theta12;
-        if(angUp/pi-floor(angUp/pi)>(1/2)) %Fast angle wrap
-            m1 = 100;
-            num1 = num1+1;
-        else
-            m1 = tan(angUp);
-        end
-        
-        if(angDown/pi-ceil(angDown/pi)<-(1/2)) %fast angle wrap
-            m2 = -100;
-            num2 = num2+1;
-        else
-            m2 = tan(angDown);
-        end
-        
-
-        yTic1 = -[0 m1*xTic(1)]';
-        yTic2 = -[0 m2*xTic(1)]';
-        
-        
         QTic = rotMat*Q*rotMat';
         
-        sqrtQTic = chol(inv(QTic));
         
         %%debug
-        if(false)
+        if(true)
          t = linspace(-pi,pi,100);
         circle = [cos(t); sin(t)];
         COS = cos(x2C(3)); SIN = sin(x2C(3));
@@ -207,33 +176,36 @@ global nx nu K rSensor thetaSensor num2 num1
         plot([xNow(1) + rSensor*cos(xNow(3)+thetaSensor), xNow(1) + rSensor*cos(xNow(3)-thetaSensor)],[xNow(2) + rSensor*sin(xNow(3)+thetaSensor), xNow(2) + rSensor*sin(xNow(3)-thetaSensor)],'g');
         end
         
-        ineqs(1) = calcDistConst(xNow); %Check distance of elipse to obstacles
-
         
-        x2Tic = sqrtQTic*xTic;
-        y2Tic1 = sqrtQTic*yTic1;
-        y2Tic2 = sqrtQTic*yTic2;
+        sqrtQTic = inv(chol(QTic));
+        x2Tic = sqrtQTic*xDiff;
         
-        A1 = (x2Tic-y2Tic1);
-        A2 = (x2Tic - y2Tic2);
-        scale = norm(x2Tic);
         
         %D = x cross normal vector
         
-        %We normalize to one to get good constraint conditioning
-        ineqs(3) = (-abs(prod(A1)/norm(A1))+ 1)/scale;
-        ineqs(4) = (-abs(prod(A2)/norm(A2))+ 1)/scale;
-        ineqs(5) = -y2Tic1(2)/scale;
-        ineqs(6) = y2Tic2(2)/scale;
+        len = sqrt(abs(1-norm(x2Tic)^2));
+        sinThe = 1/norm(x2Tic);
+        cosThe = sqrt(abs(1-sinThe^2));
         
-        xTangent = 1/x2Tic(1);
-        point_up   = [xTangent; abs(sqrt(1-xTangent^2));];
-        point_down = [xTangent; -abs(sqrt(1-xTangent^2));];
-        OccludeTriangle = [x2Tic, point_up, point_down];
+        xTangent = len*cosThe - norm(x2Tic);
+        yTangent = len*sinThe;
+        point_up   = [xTangent; yTangent];
+        point_down = [xTangent; -yTangent];
         
-
+        rot2xTic = rotz(360*cart2pol(xDiff(1), xDiff(2))/2/pi+180);
+        OccludeTriangle = [x2Tic, rot2xTic(1:2,1:2)*[point_up, point_down], x2Tic];
         
-        ineqs(8) = calcOcculusionConst( xNow, x2C, OccludeTriangle);
+        
+        
+        slopes = yTangent/abs(abs(xTangent) - norm(x2Tic));
+        plotTri = [x2Tic, rot2xTic(1:2,1:2)*[point_up + [1; slopes;], point_down + [1; -slopes;]]];
+        rescaledTri = chol(QTic)*OccludeTriangle;
+        rescaledTri(1,:) = rescaledTri(1,:)+x2C(1) + aRot(1);
+        rescaledTri(2,:) = rescaledTri(2,:)+x2C(2) + aRot(2);
+        
+        ineqs(8) = calcOcculusionConst(rescaledTri)
+        
+        plot([rescaledTri(1,:),rescaledTri(1,1)] , [rescaledTri(2,:),rescaledTri(2,1)], 'b');
         
         
         %%Begin testing of polyhedral notation 
@@ -247,7 +219,7 @@ global nx nu K rSensor thetaSensor num2 num1
                        SIN COS]*normals;
                    
         %%Check ellipsoidal contianment
-        if(false)
+        if(true)
         testNorms = [rot_normals(1,:);rot_normals(2,:)];
         plot([xNow(1),testNorms(1,1)+xNow(1)],[xNow(2),testNorms(2,1)+xNow(2)],'r')
         plot([xNow(1),testNorms(1,2)+xNow(1)],[xNow(2),testNorms(2,2)+xNow(2)],'r')
@@ -261,9 +233,10 @@ global nx nu K rSensor thetaSensor num2 num1
         b_translate = rot_normals'*(xNow(1:2)-(x2C(1:2)+aRot)); 
         b_new  = b + b_translate;
         
-        COS = cos(xNow(3)); SIN = sin(xNow(3));
-        rot_normals = [COS -SIN; 
-                       SIN COS]*rot_normals;
+        %%ToDo check this seems wrong
+        %COS = cos(xNow(3)); SIN = sin(xNow(3));
+        %rot_normals = [COS -SIN; 
+        %               SIN COS]*rot_normals;
         
         scew_norm = inv(chol(inv(Q)))'*rot_normals;
         
@@ -277,7 +250,7 @@ global nx nu K rSensor thetaSensor num2 num1
         
         ineqs(2:7) = test_eqs;
         
-% %         hold off
+         hold off
         
     end
 
@@ -303,24 +276,9 @@ global nx nu K rSensor thetaSensor num2 num1
         
     end
 
-     function distConst = calcOcculusionConst(xNow, x2C, triangle)
-            if(abs(xNow(3))>pi)
-                xNow(3) = wrapToPi(xNow(3)); %angle wrap
-            end
-
-            %The remaining eqconst are safety distance contraints
-            %They utilze eliptic transformations 
-            [~,Q] = interpReactive(x2C(4));
-            COS = cos(xNow(3)); SIN = sin(xNow(3));
-
-            rotMat = [COS -SIN; 
-                      SIN COS];
-
-            QTic = rotMat*Q*rotMat';
-
-            sqrtQTic = chol(inv(QTic));
-
-            distConst =  -Dist2OccTri(xNow, triangle, sqrtQTic); %Check distance of elipse to obstacles
+     function distConst = calcOcculusionConst(triangle)
+            
+            distConst =  -Dist2OccTri(triangle); %Check distance of elipse to obstacles
 
         end
 

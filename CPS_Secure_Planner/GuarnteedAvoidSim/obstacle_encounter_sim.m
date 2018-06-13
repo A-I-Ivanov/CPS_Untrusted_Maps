@@ -38,6 +38,8 @@ accelBounds = [-1.2 1.2];
 load('round_the_bend_test.mat');
 %load('passage_way_large.mat');
 %load('passage_way_small.mat');
+[a,b] = poly2cw(polygons{1}(1,:), polygons{1}(2,:));
+polygons{1} = [a;b];
 thetaSensor = pi/4;
 %%The Following is an example of how to set variables  to run your own tests
 %%All of these variables are contained in the files above for the senarios
