@@ -150,31 +150,31 @@ global nx nu K rSensor thetaSensor num2 num1
         aRot = rotMat*a;
         xDiff = xNow(1:2)- x2C(1:2) - aRot;
         
-        if(true)
-        plot(xNow(1), xNow(2), 'rx');
-        hold on
-        [m,n] = pol2cart(x2C(3),.5);
-        quiver(x2C(1)+aRot(1), x2C(2)+aRot(2),m,n);
-        end
+% %         if(true)
+% %         plot(xNow(1), xNow(2), 'rx');
+% %         hold on
+% %         [m,n] = pol2cart(x2C(3),.5);
+% %         quiver(x2C(1)+aRot(1), x2C(2)+aRot(2),m,n);
+% %         end
         
         QTic = rotMat*Q*rotMat';
         
         
         %%debug
-        if(true)
-         t = linspace(-pi,pi,100);
-        circle = [cos(t); sin(t)];
-        COS = cos(x2C(3)); SIN = sin(x2C(3));
-        rotMat = [COS -SIN; 
-                  SIN COS];
-        ellipse = rotMat*chol(Q)*circle;
-        ellipse(1,:) = ellipse(1,:)+x2C(1)+aRot(1);
-        ellipse(2,:) = ellipse(2,:)+x2C(2)+aRot(2);
-        plot(ellipse(1,: ), ellipse(2,:),'r');
-        plot([xNow(1), xNow(1) + rSensor*cos(xNow(3)+thetaSensor)],[xNow(2), xNow(2) + rSensor*sin(xNow(3)+thetaSensor)],'g');
-        plot([xNow(1), xNow(1) + rSensor*cos(xNow(3)-thetaSensor)],[xNow(2), xNow(2) + rSensor*sin(xNow(3)-thetaSensor)],'g');
-        plot([xNow(1) + rSensor*cos(xNow(3)+thetaSensor), xNow(1) + rSensor*cos(xNow(3)-thetaSensor)],[xNow(2) + rSensor*sin(xNow(3)+thetaSensor), xNow(2) + rSensor*sin(xNow(3)-thetaSensor)],'g');
-        end
+% %         if(true)
+% %          t = linspace(-pi,pi,100);
+% %         circle = [cos(t); sin(t)];
+% %         COS = cos(x2C(3)); SIN = sin(x2C(3));
+% %         rotMat = [COS -SIN; 
+% %                   SIN COS];
+% %         ellipse = rotMat*chol(Q)*circle;
+% %         ellipse(1,:) = ellipse(1,:)+x2C(1)+aRot(1);
+% %         ellipse(2,:) = ellipse(2,:)+x2C(2)+aRot(2);
+% %         plot(ellipse(1,: ), ellipse(2,:),'r');
+% %         plot([xNow(1), xNow(1) + rSensor*cos(xNow(3)+thetaSensor)],[xNow(2), xNow(2) + rSensor*sin(xNow(3)+thetaSensor)],'g');
+% %         plot([xNow(1), xNow(1) + rSensor*cos(xNow(3)-thetaSensor)],[xNow(2), xNow(2) + rSensor*sin(xNow(3)-thetaSensor)],'g');
+% %         plot([xNow(1) + rSensor*cos(xNow(3)+thetaSensor), xNow(1) + rSensor*cos(xNow(3)-thetaSensor)],[xNow(2) + rSensor*sin(xNow(3)+thetaSensor), xNow(2) + rSensor*sin(xNow(3)-thetaSensor)],'g');
+% %         end
         
         
         sqrtQTic = inv(chol(QTic));
@@ -197,15 +197,15 @@ global nx nu K rSensor thetaSensor num2 num1
         
         
         
-        slopes = yTangent/abs(abs(xTangent) - norm(x2Tic));
-        plotTri = [x2Tic, rot2xTic(1:2,1:2)*[point_up + [1; slopes;], point_down + [1; -slopes;]]];
+% %         slopes = yTangent/abs(abs(xTangent) - norm(x2Tic));
+% %         plotTri = [x2Tic, rot2xTic(1:2,1:2)*[point_up + [1; slopes;], point_down + [1; -slopes;]]];
         rescaledTri = chol(QTic)*OccludeTriangle;
         rescaledTri(1,:) = rescaledTri(1,:)+x2C(1) + aRot(1);
         rescaledTri(2,:) = rescaledTri(2,:)+x2C(2) + aRot(2);
         
-        ineqs(8) = calcOcculusionConst(rescaledTri)
+        ineqs(8) = calcOcculusionConst(rescaledTri);
         
-        plot([rescaledTri(1,:),rescaledTri(1,1)] , [rescaledTri(2,:),rescaledTri(2,1)], 'b');
+% %         plot([rescaledTri(1,:),rescaledTri(1,1)] , [rescaledTri(2,:),rescaledTri(2,1)], 'b');
         
         
         %%Begin testing of polyhedral notation 
@@ -219,15 +219,15 @@ global nx nu K rSensor thetaSensor num2 num1
                        SIN COS]*normals;
                    
         %%Check ellipsoidal contianment
-        if(true)
-        testNorms = [rot_normals(1,:);rot_normals(2,:)];
-        plot([xNow(1),testNorms(1,1)+xNow(1)],[xNow(2),testNorms(2,1)+xNow(2)],'r')
-        plot([xNow(1),testNorms(1,2)+xNow(1)],[xNow(2),testNorms(2,2)+xNow(2)],'r')
-        plot([xNow(1),testNorms(1,3)+xNow(1)],[xNow(2),testNorms(2,3)+xNow(2)],'r')
-        
-        
-        axis([-2,2,-2,2])
-        end
+% %         if(true)
+% %         testNorms = [rot_normals(1,:);rot_normals(2,:)];
+% %         plot([xNow(1),testNorms(1,1)+xNow(1)],[xNow(2),testNorms(2,1)+xNow(2)],'r')
+% %         plot([xNow(1),testNorms(1,2)+xNow(1)],[xNow(2),testNorms(2,2)+xNow(2)],'r')
+% %         plot([xNow(1),testNorms(1,3)+xNow(1)],[xNow(2),testNorms(2,3)+xNow(2)],'r')
+% %         
+% %         
+% %         axis([-2,2,-2,2])
+% %         end
         
         test_eqs(1:3) = rot_normals'*(x2C(1:2) + aRot - xNow(1:2)) - b;
         b_translate = rot_normals'*(xNow(1:2)-(x2C(1:2)+aRot)); 
@@ -250,7 +250,7 @@ global nx nu K rSensor thetaSensor num2 num1
         
         ineqs(2:7) = test_eqs;
         
-         hold off
+% %          hold off
         
     end
 

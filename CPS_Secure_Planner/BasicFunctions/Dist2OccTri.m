@@ -24,7 +24,7 @@ P1.y =  triangle(2,:);
 
  for i=1:numObst
     transVert = ([verticies{i}(1,:); verticies{i}(2,:)]);
-    plot([transVert(1,:),transVert(1,1)] , [transVert(2,:),transVert(2,1)], 'y');
+% %     plot([transVert(1,:),transVert(1,1)] , [transVert(2,:),transVert(2,1)], 'y');
      %%Check for intersecting obstacles
     P2.x =  [transVert(1,:), transVert(1,1)];
     P2.y =   [transVert(2,:), transVert(2,1)];
@@ -35,15 +35,10 @@ P1.y =  triangle(2,:);
         [intersectionX,intersectionY]  = polybool('intersection',P1.x, P1.y,P2.x, P2.y);
         distNow = - polyarea(intersectionX,intersectionY); %use intersectional area as distance proxy
 
-        
-        if(distNow>0)
-           notGood =1; 
-        end
     end
     if( distNow < dist)
      dist = distNow;
     end
-    
     
 
  end
