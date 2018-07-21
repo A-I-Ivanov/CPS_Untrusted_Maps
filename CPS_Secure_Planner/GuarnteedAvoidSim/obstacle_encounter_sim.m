@@ -16,7 +16,7 @@ warmstart = 0;
 
 deltaT = 0.2; %Initial guess of deltaT
 reactiveDT = .1; %DeltaT for the reactive controller 
-K = 20; %Number of time steps or knot points
+K = 30; %Number of time steps or knot points
 Tf = K*deltaT; %Final time
 nx = 5; %The state number [x,y, orientation, linear speed, angular speed]
 nu = 2; %The number of controls [acceleration, turn rate]
@@ -58,7 +58,7 @@ uStart =  [.2 .4]'; %guess of optimal controls
 %Linear inequality constraint matricies 
 A = [];
 b = [];
-
+xT=xT(1:2);
 %The following matrix is used for the reatice controller
 catXc = repmat([0; xStart(1:2); 0; 0; 0; 0; 0;], K, 1);
 
@@ -80,9 +80,9 @@ stateOnly = diffDriveKinematics(xlast(1:nx),uStart, x0(1));
 x0 = vertcat(x0, stateOnly);
 
 %The equality constraints
-Aeq = zeros(2*nx-2,length(x0));
+Aeq = zeros(2*nx-3,length(x0));
 Aeq(1:nx,2:nx+1) = eye(nx);
-Aeq(nx+1:end,end-nx+1:end-nx+3) = eye(nx-2);
+Aeq(nx+1:end,end-nx+1:end-nx+2) = eye(nx-3);
 beq = [xStart;xT]; %Make sure the start and end conditions are satisfied
 
 
@@ -105,52 +105,52 @@ ub(nx+nu+1:nx+nu:end-nx) = turnBounds(2); %%Bound the turn rate
 
 %Some options for the optimizer
 options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 300, 'MaxFunEvals', 10000, 'TolX', 1e-12);
-options =optimoptions(options,'OptimalityTolerance', 1e-3);
+options =optimoptions(options,'OptimalityTolerance', 1e-5);
 options =optimoptions(options,'Display','iter');
-options =optimoptions(options,'ConstraintTolerance', 1e-4); 
+options =optimoptions(options,'ConstraintTolerance', 1e-5); 
 options =optimoptions(options,'FiniteDifferenceType', 'central'); 
 options =optimoptions(options,'GradObj', 'on'); 
 options =optimoptions(options,'SpecifyObjectiveGradient',true);
 options =optimoptions(options,'CheckGradients',false);
 options =optimoptions(options,'SpecifyConstraintGradient', true);
-options = optimoptions(options, 'UseParallel',true);
+%options = optimoptions(options, 'UseParallel',true);
 
 
 
 %%Solve the thing
 % profile on
-% safetyDistance = .025;
-% nonlcon = @(x) basicDynamicsConstraints(x, safetyDistance);%Constriants for base-line planner
-% fun = @minTimeCost;
-% 
-% 
-% tic
-% 
-% if(testing)
-%     %Uncomment this line for testing and visualization. 
-%     %load('testingTraj.mat') %Save your base-line trajectory to this file if you want
-%     %to simply visualize the path
-%     if(warmstart)
-%         x0 = plannedTraj;
-%         plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
-%     end
-% else
-%     plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
-% end
-% toc
-% 
-% plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
-% 
-% [realizedTraj, setPoint] = simulateRobot(plannedTraj);
-% 
-% plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
+safetyDistance = .025;
+nonlcon = @(x) basicDynamicsConstraints(x, safetyDistance);%Constriants for base-line planner
+fun = @minTimeCost;
+
+
+tic
+
+if(testing)
+    %Uncomment this line for testing and visualization. 
+    %load('testingTraj.mat') %Save your base-line trajectory to this file if you want
+    %to simply visualize the path
+    if(warmstart)
+        x0 = plannedTraj;
+        plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+    end
+else
+    plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+end
+toc
+
+plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
+
+[realizedTraj, setPoint] = simulateRobot(plannedTraj);
+
+plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
 
 
 %%Now do the same thing with secure method
 nonlcon = @knotViewConstraints; %Visibility constraints, dynamics, and reactive set constraints
 fun = @minTimeCost;
 warmstart=1;
-tic
+
 profile on
 if(testing || warmstart)
     safetyDistance = .1;
@@ -161,15 +161,17 @@ if(testing || warmstart)
     %Uncomment this line for testing and visualization. 
     %load('guaranteedTraj.mat') %Save your optimal trajectory to this file if you want
     %to simply visualize the path
-    if(warmstart) %Note: If the warmstart path is highly infeasible, this will fail
+    tic
         plannedTraj = fmincon(fun,plannedTraj,A,b,Aeq,beq,lb,ub,nonlcon, options);
-    end
+    toc
 else
+    tic
     plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+    toc
 end
 profile viewer
 profile off
-toc
+
 
 %To visualize all reactive set elipses uncomment the following line.
 %plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0,1);

@@ -1,5 +1,5 @@
 %%%%Written by Alexander I. Ivanov - 2017%%%%
-function [cin, eqconst, DCIn, DCeq] = basicDynamicsConstraintsSimpson(x, safetyDistance)
+function [eqconst, DCeq] = basicDynamicsSimpsonEqonly(x)
     finDiffDelta = 1e-6;
     
 %These constraints use a Euler approximation to the defect constraints 
@@ -29,17 +29,7 @@ persistent A B blkSz nx nu numVar
        
     end
 
-   
-    numConst = 1; 
-    numEqConst = nx*(K-1);
-    eqconst = zeros(numEqConst,1);
     
-    DCeq = zeros(numEqConst, length(x)); 
-    DCIn = zeros(numConst*(K), length(x)); 
-    
-
-    
-    cin = zeros(numConst*(K),1);
     deltaT = x(1);
 
     offset = 2;
@@ -48,10 +38,6 @@ persistent A B blkSz nx nu numVar
     %Define state-based defects. q follows Bettes pg 142
     q = zeros((K-1)*nx,1);
     fNow = diffDriveDynamics(x(offset:offset+nx-1), x(offset+nx:offset+nx+nu-1));
-    fcalc = cell(2*K-1,1);
-    fcalc{1} = {fNow};
-    foffset = 2;
-    xMidCalc = cell(K-1,1);
     
     
     for l=1:K-1
@@ -71,8 +57,6 @@ persistent A B blkSz nx nu numVar
         qOffset = qOffset+nx;
 
        
-        cin(rowIneqOffset) = calcDistConst(xNow);
-        DCIn(rowIneqOffset,:) = popSparseInJac(l,DCIn(rowIneqOffset,:), xNow);
         rowIneqOffset = rowIneqOffset+1;
         
         offset = offset+blkSz;
@@ -83,7 +67,6 @@ persistent A B blkSz nx nu numVar
     eqconst = A*x+B*q;
     DCeq = A+(B*D);
     DCeq = DCeq';
-    DCIn = DCIn';
 
     
 
@@ -92,21 +75,6 @@ return
     
     
     
-    %%%%%%%Begin Helper Functions%%%%%%%%%%%
-    
-    %This function populates the sparse inequality jacobian using finite
-    %differences
-    function rows = popSparseInJac(i,DinRows, xNow)
-        rows = DinRows;
-        Idt = eye(nx);
-        for j=1:nx
-            vectDelt = finDiffDelta*Idt(:,j);
-            cDeltPlus = calcDistConst(xNow + vectDelt)';
-            cDeltMinus = calcDistConst(xNow - vectDelt)';
-            rows(:,1+j+(i-1)*(blkSz))= (cDeltPlus-cDeltMinus)/(2*finDiffDelta);
-        end
-
-    end
     
     %This function populates rows of the sparse equality jacobian analytically
     function Drows = popSparseJacSimpson(qk,xNow, xMid,xNext, uNow,uMid,uNext, fNow, fNext,colOffset)

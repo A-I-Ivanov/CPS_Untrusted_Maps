@@ -1,5 +1,5 @@
 %%%%Written by Alexander I. Ivanov - 2017%%%%
-function [update, fnext] = simpsonUpdate(xNow, xNext,uNow, uMid,uNext, deltaT, fnow)
+function [update, fnext, fmid, xMid] = simpsonUpdate(xNow, xNext,uNow, uMid,uNext, deltaT, fnow)
 fnext = diffDriveDynamics(xNext, uNext);
 xMid = (xNow+xNext)/2+deltaT/8*(fnow-fnext);
 fmid =  diffDriveDynamics(xMid,uMid);

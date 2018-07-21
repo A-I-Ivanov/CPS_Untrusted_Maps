@@ -1,5 +1,5 @@
 %%%%Written by Alexander I. Ivanov - 2017%%%%
-function [cin, eqconst, DCIn, DCeq] = knotViewConstraints(x)
+function [cin, eqconst, DCIn, DCeq] = knotViewConstraintsSimpson(x)
     finDiffDelta = 1e-6;
     
 %This function provides dynamic defect constraints as well as 
@@ -20,6 +20,8 @@ global nx nu K rSensor thetaSensor num2 num1
     
     cin = zeros(numConst*(K-deltaEye)+deltaEye,1);
     deltaT = x(1);
+    
+    
     
     %Define state-based constraints and visibility constraints
     for i=1:K-deltaEye-1

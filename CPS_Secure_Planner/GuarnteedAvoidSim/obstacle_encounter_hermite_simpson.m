@@ -1,6 +1,6 @@
 %This code simulates a robot forward for 3 seconds using an MPC controller
 clear all
-close all
+%close all
 addpath('../BasicFunctions') ;
 addpath('../ReactiveController');
 global deltaT  K nx nu  xStart rSafe xT  polygons
@@ -14,7 +14,7 @@ numObst =1; %The number of obstacles
 testing =0;
 warmstart = 0;
 
-deltaT = 0.2; %Initial guess of deltaT
+deltaT = .2; %Initial guess of deltaT
 reactiveDT = .1; %DeltaT for the reactive controller 
 K = 20; %Number of time steps or knot points
 Tf = K*deltaT; %Final time
@@ -45,8 +45,8 @@ thetaSensor = pi/3;
 %%All of these variables are contained in the files above for the senarios
 %%in our published work. 
 
-xStart = [0.0, -.5, pi/2, 1, 0]'; %Where and how fast am I going?
-xT = [0 , 1.2, (pi/2)]'; % .5, 0]'; %Terminal point 
+xStart = [0.0, .1, 0, 1, 0]'; %Where and how fast am I going?
+xT = [1.20000000000000;1.50000000000000]; % .5, 0]'; %Terminal point 
 uStart =  [.2 .4]'; %guess of optimal controls
 polygons{1} = [-0.500000000000000,1,1,-0.500000000000000;1,1,0.500000000000000,0.500000000000000];
 %polygons{2} = [0.5,.25,.25;0,0,.5];
@@ -80,9 +80,9 @@ stateOnly = diffDriveKinematics(xlast(1:nx),uStart, x0(1));
 x0 = vertcat(x0, stateOnly, uStart);
 
 %The equality constraints
-Aeq = zeros(2*nx-2,length(x0));
+Aeq = zeros(2*nx-3,length(x0));
 Aeq(1:nx,2:nx+1) = eye(nx);
-Aeq(nx+1:end,end-nx+1-nu:end-nx+3-nu) = eye(nx-2);
+Aeq(nx+1:end,end-nx-1:end-nx) = eye(nx-3);
 beq = [xStart;xT]; %Make sure the start and end conditions are satisfied
 
 
@@ -111,15 +111,15 @@ ub(nx+3+nu:blkSz:end) = turnBounds(2); %%Bound the turn rate
 
 %Some options for the optimizer
 options = optimoptions('fmincon','Algorithm','sqp', 'MaxIter', 300, 'MaxFunEvals', 10000, 'TolX', 1e-12);
-options =optimoptions(options,'OptimalityTolerance', 1e-3);
-options =optimoptions(options,'Display','iter');
-options =optimoptions(options,'ConstraintTolerance', 1e-5); 
-options =optimoptions(options,'FiniteDifferenceType', 'central'); 
-options =optimoptions(options,'GradObj', 'off'); 
-options =optimoptions(options,'SpecifyObjectiveGradient',false);
-options =optimoptions(options,'CheckGradients',false);
-options =optimoptions(options,'SpecifyConstraintGradient', false);
-options = optimoptions(options, 'UseParallel',true);
+options = optimoptions(options, 'OptimalityTolerance', 1e-5);
+options = optimoptions(options, 'Display','iter');
+options = optimoptions(options, 'ConstraintTolerance', 1e-5); 
+options = optimoptions(options, 'FiniteDifferenceType', 'central'); 
+options = optimoptions(options, 'GradObj', 'on'); 
+options = optimoptions(options, 'SpecifyObjectiveGradient',true);
+options = optimoptions(options, 'CheckGradients',false);
+options = optimoptions(options, 'SpecifyConstraintGradient', true);
+% options = optimoptions(options, 'UseParallel',true);
 
 
 
@@ -131,7 +131,7 @@ fun = @minTimeCost;
 
 
 tic
-
+testing = false;
 if(testing)
     %Uncomment this line for testing and visualization. 
     %load('testingTraj.mat') %Save your base-line trajectory to this file if you want
@@ -145,11 +145,31 @@ else
 end
 toc
 
-plotObstacles_Traj(plannedTraj,polygons, unknownObst,xStart, xT, 0);
+plotObstacles_Traj_simpson(plannedTraj,polygons, unknownObst,xStart, xT, 0);
 
-[realizedTraj, setPoint] = simulateRobot(plannedTraj);
+% options = optimoptions(options, 'CheckGradients',true);
+safetyDistance = .025;
+nonlcon = @(x) knotViewConstraintsSimpson(x);%Constriants for base-line planner
+fun = @minTimeCost;
 
-plotObstacles_Traj(realizedTraj,polygons, unknownObst,xStart, xT, 1,0, setPoint);
+
+warmstart = true;
+tic
+
+
+%Uncomment this line for testing and visualization. 
+%load('testingTraj.mat') %Save your base-line trajectory to this file if you want
+%to simply visualize the path
+if(warmstart)
+    x0 = plannedTraj;
+    plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+
+else
+    plannedTraj = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon, options);
+end
+toc
+
+plotObstacles_Traj_simpson(plannedTraj,polygons, unknownObst,xStart, xT, 0);
 
 
 
