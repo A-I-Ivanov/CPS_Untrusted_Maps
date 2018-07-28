@@ -10,7 +10,7 @@ global nx nu K rSensor thetaSensor
     blkSz = 2*nu+nx;
     E = eye(nx);
     numConst = 8; 
-    deltaEye = 5;
+    deltaEye = 3;
     numVar = length(x);
  
     DCIn = zeros(numConst*(K-deltaEye)+deltaEye, length(x)); %+deltaEye
@@ -26,7 +26,7 @@ global nx nu K rSensor thetaSensor
     for i =1:deltaEye-1
         xNow = x(colOffset:colOffset+nx-1);
 
-        cin(ineqOffset) = -obstDistance(xNow, [],0);
+        cin(ineqOffset) = calcDistConst(xNow);
         DCIn(ineqOffset,:) = popDistJac(colOffset, xNow);
         ineqOffset = ineqOffset+1;
         colOffset = colOffset+blkSz;
@@ -76,8 +76,8 @@ global nx nu K rSensor thetaSensor
         rows = zeros(1, numVar);
         for j=1:nx
             vectDelt = finDiffDelta*E(:,j);
-            cDeltPlus = -obstDistance(xNow + vectDelt,[],0);
-            cDeltMinus = -obstDistance(xNow - vectDelt,[],0);
+            cDeltPlus = calcDistConst(xNow + vectDelt);
+            cDeltMinus = calcDistConst(xNow - vectDelt);
             rows(:,colOffset+j-1)= (cDeltPlus-cDeltMinus)/(2*finDiffDelta);
         end
 
@@ -97,7 +97,7 @@ global nx nu K rSensor thetaSensor
             xNow(3) = wrapToPi(xNow(3)); %angle wrap
         end
         
-        ineqs(1) = calcDistConst(xNow); %Check distance of elipse to obstacles
+        ineqs(1) = calcDistConst(x2C); %Check distance of elipse to obstacles
 
         %The remaining eqconst are safety visual contraints
         %They utilze eliptic transformations to take the reactive 
@@ -195,7 +195,7 @@ global nx nu K rSensor thetaSensor
         
         sqrtQTic = chol(inv(QTic));
         
-        distConst = -obstDistance(xNow(1:2)+arot, sqrtQTic, 0); %Check distance of elipse to obstacles
+        distConst = -obstDistance(xNow(1:4)+[arot;0;0], sqrtQTic, 0); %Check distance of elipse to obstacles
         
     end
 

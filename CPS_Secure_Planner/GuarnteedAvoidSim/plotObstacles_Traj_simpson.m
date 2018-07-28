@@ -70,10 +70,10 @@ end
 
  
 
-sV = trajectory(5:(nx+nu):end);
-sX = trajectory(2:(nx+nu):end);
-sY = trajectory(3:(nx+nu):end);
-sThe = trajectory(4:(nx+nu):end);
+sV = trajectory(5:(nx+2*nu):end);
+sX = trajectory(2:(nx+2*nu):end);
+sY = trajectory(3:(nx+2*nu):end);
+sThe = trajectory(4:(nx+2*nu):end);
 if(estimateReactive)
     t = linspace(0,2*pi,100);
     x = cos(t);
@@ -155,7 +155,7 @@ ylabel('Y in meters', 'FontSize',16)
 
 
 
-axis([-.55 2 -.6 2])
+axis([0 4 0 4])
 axis equal
 
 if(plotViews)

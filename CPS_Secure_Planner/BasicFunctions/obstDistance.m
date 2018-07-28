@@ -44,9 +44,17 @@ else
         if( distNow < dist)
          dist = distNow;
         end
+
      end
 
      dist = dist/max(abs(sqrtQ(1,1)),abs(sqrtQ(2,2)));
+     
+     
+     
+
+     
+     
+     
  
 end
  

@@ -33,7 +33,9 @@ P1.y =  triangle(2,:);
     if(distNow ==0)
         
         [intersectionX,intersectionY]  = polybool('intersection',P1.x, P1.y,P2.x, P2.y);
-        distNow = - polyarea(intersectionX,intersectionY); %use intersectional area as distance proxy
+        [msg,msgID] = lastwarn;
+        
+        distNow = - 100*polyarea(intersectionX,intersectionY); %use intersectional area as distance proxy
 
     end
     if( distNow < dist)
