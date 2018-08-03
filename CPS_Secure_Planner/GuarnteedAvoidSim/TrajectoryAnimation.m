@@ -1,10 +1,10 @@
-function [ ] = plotObstacles_Traj_simpson( trajectory,polygons, unknownObst, varargin)
+function [M] = TrajectoryAnimation( trajectory,polygons, unknownObst, varargin)
 % This is a plotting function which produces graphs for trajectory
 % optimization plans. The solid flag is used to plot a solid line
 % instead of a quiver plot
 % You can also visualize the reactive set ellipses
 global nx nu thetaSensor rSensor
-figure
+%figure
 hold on
 
 quiverScale = .3;
@@ -101,6 +101,42 @@ if(plotViews)
     end
 end
 
+
+
+end
+xlabel('X in meters')
+ylabel('Y in meters')
+
+interpFact = 4;
+theInt = interp(thePos,interpFact);
+yInt = interp(yPos,interpFact);
+xInt = interp(xPos,interpFact);
+
+triCoord = [ 0 -.1 -.1;
+            0 -.05   .05];
+
+rotMat = eul2rotm([0 0 theInt(1)]);
+
+rotCoord = rotMat(2:3, 2:3)*triCoord;
+p= fill(rotCoord(1,:)+xInt(1), rotCoord(2,:)+yInt(1), 'b');
+offset =0;
+for k=1:trajSize(2)
+    dT = trajectory(k,1)/interpFact;
+    offset = offset+1;
+    M(offset) = getframe;
+    for i=1:(timeSteps*interpFact)
+        pause(dT/4)
+        if(offset==length(xInt))
+            break
+        end
+        rotMat = eul2rotm([0 0 theInt(offset)]);
+
+        rotCoord = rotMat(2:3, 2:3)*triCoord;
+        p.XData= rotCoord(1,:)+xInt(offset);
+        p.YData= rotCoord(2,:)+yInt(offset); 
+        M(offset) = getframe;
+        offset = offset+1;
+    end
 end
 
 
@@ -124,15 +160,15 @@ deltaTs = traj(1,:);
 
 
 for i=1:sz(2)
-   x = [x; traj(2:(blkSz):end,i)];
-   y = [y; traj(3:(blkSz):end,i)];
-   the = [the; traj(4:(blkSz):end,i)];
-   v = [v; traj(5:(blkSz):end,i)];
-   w = [w; traj(6:(blkSz):end,i)];
-   u1 = [u1; traj(7:(blkSz):end,i)];
-   u2 = [u2; traj(8:(blkSz):end,i)];
-   u1mid = [u1mid; traj(9:(blkSz):end,i)];
-   u2mid = [u2mid; traj(10:(blkSz):end,i)];
+   x = [x; traj(2:(blkSz):end-blkSz,i)];
+   y = [y; traj(3:(blkSz):end-blkSz,i)];
+   the = [the; traj(4:(blkSz):end-blkSz,i)];
+   v = [v; traj(5:(blkSz):end-blkSz,i)];
+   w = [w; traj(6:(blkSz):end-blkSz,i)];
+   u1 = [u1; traj(7:(blkSz):end-blkSz,i)];
+   u2 = [u2; traj(8:(blkSz):end-blkSz,i)];
+   u1mid = [u1mid; traj(9:(blkSz):end-blkSz,i)];
+   u2mid = [u2mid; traj(10:(blkSz):end-blkSz,i)];
     
 end
 
